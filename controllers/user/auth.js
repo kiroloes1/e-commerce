@@ -35,7 +35,8 @@ exports.login = async (req, res) => {
 
     res.status(200).json({
       message: `تم تسجيل دخول ${user.name} بنجاح`,
-      accessToken
+      accessToken,
+      userName: user.userName,
     });
 
   } catch (err) {
@@ -157,9 +158,7 @@ exports.forgetPassword = async (req, res) => {
   }
 };
 
-
 // new password reset
-
 exports.resetPassword = async (req, res) => {
   const { email, resetCode, newPassword } = req.body;
 

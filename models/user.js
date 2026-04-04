@@ -22,10 +22,10 @@ const userSchema=new mongoose.Schema({
          building:String,
          floor:String,
      },
-     phoneNumber:[{
-        type:String,
-        match: /^\+?[1-9]\d{1,14}$/
-        }],
+phoneNumber: [{
+  type: String,
+  match: [/^(010|011|012|015)[0-9]{8}$/, 'Invalid Egyptian phone number']
+}],
        profileImage:{
          url:String,
          publicId:String
