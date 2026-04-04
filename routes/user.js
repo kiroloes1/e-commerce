@@ -6,12 +6,8 @@ const adminControllers = require(`${__dirname}/../controllers/user/auth`);
 // login route
 router.post('/login', adminControllers.login);
 
-
 // login route
 router.post('/sign-up', adminControllers.signUp);
-
-// refresh token
-router.post('/refresh-token', adminControllers.refreshToken);
 
 // reset password
 router.put('/reset-password', adminControllers.resetPassword);

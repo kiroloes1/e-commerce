@@ -1,5 +1,5 @@
 const jwt=require('jsonwebtoken');
-const User=require(`${__dirname}/../models/adminsModel`);
+const User=require(`${__dirname}/../models/user`);
 exports.protected=async(req,res,next)=>{
     const authHeader=req.headers.authorization;;
     if(!authHeader || !authHeader.startsWith('Bearer')){

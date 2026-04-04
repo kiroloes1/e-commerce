@@ -12,7 +12,7 @@ app.use(cors({
   credentials: true
 }));
 const config=require(`${__dirname}/config/configDB`);
-
+const userRoute=require(`${__dirname}/routes/user`);
 config.connectDB("mongodb://localhost:27017/elliaDB");
 
 
@@ -23,6 +23,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 
+app.use('/v1/users',userRoute);
 
 
 const PORT=process.env.PORT || 5000;
