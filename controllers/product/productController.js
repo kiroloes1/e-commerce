@@ -182,7 +182,20 @@ exports.getAllProductsClients = async (req, res) => {
   }
 };
 
-
+// get product by limit  to clients
+exports.getAllProductsClientsLimit = async (req, res) => {
+  try {
+    const {limit} =req.query || 10
+    const products = await productModel.find({},{packageSellingPrice:0,pieceSellingPrice:0,purchasePrice:0}).limit(limit);
+    return res.status(200).json({
+      message: "تم جلب جميع المنتجات بنجاح",
+      data: products,
+      length:products.length
+    });
+  } catch (err) {
+    return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات: " + err.message });
+  }
+};
 
 // filter to  product based on category
 exports.filterProductBasedOnCategory=async(req,res)=>{

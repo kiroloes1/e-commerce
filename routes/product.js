@@ -12,6 +12,7 @@ router.get('/all', productController.getAllProducts);
 //  Get all products clients
 router.get('/allClients', productController.getAllProductsClients);
 
+router.get('/allClientsLimit', productController.getAllProductsClientsLimit);
 
 //  Get product by ID
 router.get('/:id', productController.getProductById);
