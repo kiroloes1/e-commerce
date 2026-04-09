@@ -5,6 +5,9 @@ const authorization = require(`${__dirname}/../middlewares/authorization`);
 const productController = require(`${__dirname}/../controllers/product/productController`);
 const upload = require(`${__dirname}/../config/multerConfig`);
 
+const multer  =require('multer');
+const strong=multer.memoryStorage();
+const uploads=multer({strong:strong})
 //  Get all products
 router.get('/all', productController.getAllProducts);
 
@@ -34,7 +37,7 @@ router.use(authorization.role('admin'));
 router.post('/', productController.createProduct);
 
 //  Create products from Excel
-router.post('/add-product-from-excel-sheets', upload.single('file'), productController.createFromExcel);
+router.post('/add-product-from-excel-sheets', uploads.single('file'), productController.createFromExcel);
 
 
 //  Update product
