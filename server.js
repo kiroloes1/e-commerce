@@ -14,7 +14,7 @@ app.use(cors({
 const config=require(`${__dirname}/config/configDB`);
 const userRoute=require(`${__dirname}/routes/user`);
 const productRoute=require(`${__dirname}/routes/product`)
-config.connectDB("mongodb://localhost:27017/elliaDB");
+config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority");
 
 
 
