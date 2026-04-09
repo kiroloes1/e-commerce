@@ -13,7 +13,8 @@ app.use(cors({
 }));
 const config=require(`${__dirname}/config/configDB`);
 const userRoute=require(`${__dirname}/routes/user`);
-config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority");
+const productRoute=require(`${__dirname}/routes/product`)
+config.connectDB("mongodb://localhost:27017/elliaDB");
 
 
 
@@ -24,6 +25,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 app.use('/v1/users',userRoute);
+app.use('/v1/product',productRoute);
+
 
 
 const PORT=process.env.PORT || 5000;
