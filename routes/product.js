@@ -15,6 +15,9 @@ router.get('/allClients', productController.getAllProductsClients);
 
 router.get('/allClientsLimit', productController.getAllProductsClientsLimit);
 
+// get all products  based on category
+router.get('/getProductsByCategory', productController.getProductsByCategory);
+
 //  Get product by ID
 router.get('/:id', productController.getProductById);
 
@@ -24,8 +27,6 @@ router.get('/search/query', productController.search);
 //  Get all categories (filter products by category)
 router.get('/categories/all', productController.filterProductBasedOnCategory);
 
-// get all products  based on category
-router.get('/getProductsByCategory', productController.getProductsByCategory);
 
 router.use(authMiddleware.protected);
 
