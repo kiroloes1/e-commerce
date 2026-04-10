@@ -311,19 +311,31 @@ exports.search = async (req, res) => {
   try {
 
     const limit = parseInt(req.query.limit) || 20;
+    const {category}=req.query
     const searchValue = req.query.search;
 
     if (!searchValue) {
       return res.status(400).json({ message: "من فضلك ادخل كلمات للبحث عنها" });
     }
 
-    
-    let products = await productModel.find(
+    let products ;
+
+    if(category){
+      products = await productModel.find(
+        {category:category},
       { $text: { $search: searchValue } },
       { score: { $meta: "textScore" }, purchasePrice:0 }
     )
     .sort({ score: { $meta: "textScore" }, status: 1 })
     .limit(limit);
+    }else{
+          products = await productModel.find(
+      { $text: { $search: searchValue } },
+      { score: { $meta: "textScore" }, purchasePrice:0 }
+    )
+    .sort({ score: { $meta: "textScore" }, status: 1 })
+    .limit(limit);
+    }
 
    
     if (products.length === 0) {
