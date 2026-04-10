@@ -22,7 +22,7 @@ router.use(authMiddleware.protected);
 // update password
 router.put('/update-password', adminControllers.updatePassword);
 router.put('/updateUser/:customerId', userController.updateUser);
-router.put('ظupdateProfile', userController.updateProfile);
+router.put('/updateProfile', userController.updateProfile);
 
 router.get('/getUser/:customerId', userController.getUser);
 
