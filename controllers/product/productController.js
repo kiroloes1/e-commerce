@@ -216,40 +216,42 @@ exports.filterProductBasedOnCategory=async(req,res)=>{
     
 }
 
-exports.getProductsByCategory=async(req,res)=>{
+exports.getProductsByCategory = async (req, res) => {
+  try {
+    const { category } = req.query;
+    let limit = parseInt(req.query.limit) || 8;
 
-    try{
+    let products;
 
-    const {category , limit} =req.query ;
-    let products = await productModel.find({category:category},{purchasePrice:0}).limit(limit);
-    if(products.length==0){
-        products = await productModel.find({},{purchasePrice:0}).limit(limit);
+    if (!category) {
+    
+      products = await productModel
+        .find({}, { purchasePrice: 0 })
+        .limit(limit);
+    } else {
+      
+      products = await productModel
+        .find({ category: category }, { purchasePrice: 0 })
+        .limit(limit);
+
+     
+      if (products.length === 0) {
+        products = await productModel
+          .find({}, { purchasePrice: 0 })
+          .limit(limit);
+      }
     }
 
     return res.status(200).json({
       message: "تم جلب جميع الاصناف بنجاح",
       data: products,
-      length:products.length
+      length: products.length
     });
 
-    }catch(err){
-      return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتج: " + err.message });
-    }
-}
-// GET product by ID
-exports.getProductById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const product = await productModel.findById(id,{packageSellingPrice:0,pieceSellingPrice:0,purchasePrice:0});
-    if (!product) {
-      return res.status(404).json({ message: "المنتج غير موجود" });
-    }
-    return res.status(200).json({
-      message: "تم جلب المنتج بنجاح",
-      data: product
-    });
   } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتج: " + err.message });
+    return res.status(500).json({
+      message: "حدث خطأ أثناء جلب المنتج: " + err.message
+    });
   }
 };
 
