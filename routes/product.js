@@ -8,8 +8,6 @@ const upload = require(`${__dirname}/../config/multerConfig`);
 const multer  =require('multer');
 const strong=multer.memoryStorage();
 const uploads=multer({strong:strong})
-//  Get all products
-router.get('/all', productController.getAllProducts);
 
 
 //  Get all products clients
@@ -29,6 +27,8 @@ router.get('/categories/all', productController.filterProductBasedOnCategory);
 router.use(authMiddleware.protected);
 router.use(authorization.role('admin'));
 
+//  Get all products
+router.get('/all', productController.getAllProducts);
 
 //      PRODUCTS  
 
