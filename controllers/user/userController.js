@@ -114,7 +114,7 @@ exports.getUsers = async (req, res) => {
 // update profile
 exports.updateProfile=async(req,res)=>{
   try{
-            const { userId } = req.req;
+            const { userId } = req.user;
         if(!userId){
             return res.status(403).json({message:"من فضلك سجل الدخول اولا !"})
         }
