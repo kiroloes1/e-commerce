@@ -258,7 +258,7 @@ exports.getProductsByCategory = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await productModel.findById(id,{packageSellingPrice:0,pieceSellingPrice:0,purchasePrice:0});
+    const product = await productModel.findById(id,{purchasePrice:0});
     if (!product) {
       return res.status(404).json({ message: "المنتج غير موجود" });
     }
@@ -320,7 +320,7 @@ exports.search = async (req, res) => {
     
     let products = await productModel.find(
       { $text: { $search: searchValue } },
-      { score: { $meta: "textScore" }, code:1, productName:1, description:1, category:1, image:1, totalUnits:1, status:1 }
+      { score: { $meta: "textScore" }, purchasePrice:0 }
     )
     .sort({ score: { $meta: "textScore" }, status: 1 })
     .limit(limit);
