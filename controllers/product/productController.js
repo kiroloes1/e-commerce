@@ -254,6 +254,22 @@ exports.getProductsByCategory = async (req, res) => {
     });
   }
 };
+// GET product by ID
+exports.getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await productModel.findById(id,{packageSellingPrice:0,pieceSellingPrice:0,purchasePrice:0});
+    if (!product) {
+      return res.status(404).json({ message: "المنتج غير موجود" });
+    }
+    return res.status(200).json({
+      message: "تم جلب المنتج بنجاح",
+      data: product
+    });
+  } catch (err) {
+    return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتج: " + err.message });
+  }
+};
 
 
 // DELETE product
