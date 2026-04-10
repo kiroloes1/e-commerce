@@ -110,3 +110,42 @@ exports.getUsers = async (req, res) => {
     });
   }
 };
+
+// update profile
+exports.updateProfile=async(req,res)=>{
+        const { userId } = req.req;
+        if(!userId){
+            return res.status(403).json({message:"من فضلك سجل الدخول اولا !"})
+        }
+    const { userName, email, address, phoneNumber } = req.body;
+
+    const update = {};
+
+    if (userName) update.userName = userName;
+    if (email) update.email = email;
+    if (address) update.address = address;
+
+    const query = { $set: update };
+
+   
+    if (phoneNumber) {
+      query.$push = { phoneNumber };
+    }
+
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      query,
+      { new: true, runValidators: true }
+    );
+
+
+    if (!user) {
+      return res.status(404).json({ message: "هذا المستخدم غير موجود!" });
+    }
+
+    res.status(200).json({
+      message: "تم تعديل المستخدم بنجاح",
+      user
+    });
+
+}

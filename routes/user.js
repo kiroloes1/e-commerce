@@ -21,7 +21,9 @@ router.use(authMiddleware.protected);
 
 // update password
 router.put('/update-password', adminControllers.updatePassword);
-router.put('/updateUser', userController.updateUser);
+router.put('/updateUser/:customerId', userController.updateUser);
+router.put('ظupdateProfile', userController.updateProfile);
+
 router.get('/getUser/:customerId', userController.getUser);
 
 router.use(role("admin"));
