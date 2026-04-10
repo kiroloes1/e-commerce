@@ -25,7 +25,7 @@ router.put('/updateUser/:customerId', userController.updateUser);
 router.put('/updateProfile', userController.updateProfile);
 
 router.get('/getUser/:customerId', userController.getUser);
-router.get('/getProfile', userController.getUser);
+router.get('/getProfile', userController.getProfile);
 
 
 router.use(role("admin"));
