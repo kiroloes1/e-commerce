@@ -113,7 +113,8 @@ exports.getUsers = async (req, res) => {
 
 // update profile
 exports.updateProfile=async(req,res)=>{
-        const { userId } = req.req;
+  try{
+            const { userId } = req.req;
         if(!userId){
             return res.status(403).json({message:"من فضلك سجل الدخول اولا !"})
         }
@@ -148,4 +149,9 @@ exports.updateProfile=async(req,res)=>{
       user
     });
 
+  }catch(err){
+       res.status(500).json({
+      message: "حدث خطأ أثناء تحديث المستخدم: " + err.message
+    });
+  }
 }
