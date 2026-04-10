@@ -154,7 +154,7 @@ exports.createFromExcel = async (req, res) => {
 };
 
 
-// GET all products
+// GET all products admin
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await productModel.find();
@@ -171,7 +171,7 @@ exports.getAllProducts = async (req, res) => {
 //   GET all products clients
 exports.getAllProductsClients = async (req, res) => {
   try {
-    const products = await productModel.find({},{packageSellingPrice:0,pieceSellingPrice:0,purchasePrice:0});
+    const products = await productModel.find({},{purchasePrice:0});
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
       data: products,
@@ -186,7 +186,7 @@ exports.getAllProductsClients = async (req, res) => {
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
     const {limit} =req.query || 10
-    const products = await productModel.find({},{packageSellingPrice:0,pieceSellingPrice:0,purchasePrice:0}).limit(limit);
+    const products = await productModel.find({},{purchasePrice:0}).limit(limit);
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
       data: products,
@@ -216,7 +216,26 @@ exports.filterProductBasedOnCategory=async(req,res)=>{
     
 }
 
+exports.getProductsByCategory=async(req,res)=>{
 
+    try{
+
+    const {category , limit} =req.query ;
+    let products = await productModel.find({category:category},{purchasePrice:0}).limit(limit);
+    if(products.length==0){
+        products = await productModel.find({},{purchasePrice:0}).limit(limit);
+    }
+
+    return res.status(200).json({
+      message: "تم جلب جميع الاصناف بنجاح",
+      data: products,
+      length:products.length
+    });
+
+    }catch(err){
+      return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتج: " + err.message });
+    }
+}
 // GET product by ID
 exports.getProductById = async (req, res) => {
   try {

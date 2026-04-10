@@ -24,11 +24,17 @@ router.get('/search/query', productController.search);
 //  Get all categories (filter products by category)
 router.get('/categories/all', productController.filterProductBasedOnCategory);
 
+// get all products  based on category
+router.get('/getProductsByCategory', productController.getProductsByCategory);
+
 router.use(authMiddleware.protected);
+
 router.use(authorization.role('admin'));
 
 //  Get all products
 router.get('/all', productController.getAllProducts);
+
+
 
 //      PRODUCTS  
 
