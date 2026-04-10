@@ -92,6 +92,29 @@ exports.getUser = async (req, res) => {
   }
 };
 
+// get profile
+exports.getProfile = async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    const user = await UserModel.findById(userId, "-password");
+
+  
+    if (!user) {
+      return res.status(404).json({ message: "هذا المستخدم غير موجود!" });
+    }
+
+    res.status(200).json({
+      message: "تم جلب المستخدم بنجاح",
+      user
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "حدث خطأ أثناء جلب المستخدم: " + err.message
+    });
+  }
+};
 
 // get all users
 exports.getUsers = async (req, res) => {
