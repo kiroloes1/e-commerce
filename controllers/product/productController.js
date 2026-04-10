@@ -309,44 +309,34 @@ exports.deleteProduct = async (req, res) => {
 
 exports.search = async (req, res) => {
   try {
-
     const limit = parseInt(req.query.limit) || 20;
-    const {category}=req.query
-    const searchValue = req.query.search;
+    const { category, search } = req.query;
 
-    if (!searchValue) {
+    if (!search) {
       return res.status(400).json({ message: "من فضلك ادخل كلمات للبحث عنها" });
     }
 
-    let products ;
+    let query = {
+      ...(category && { category }),
+      $text: { $search: search }
+    };
 
-    if(category){
-      products = await productModel.find(
-        {category:category},
-      { $text: { $search: searchValue } },
-      { score: { $meta: "textScore" }, purchasePrice:0 }
-    )
-    .sort({ score: { $meta: "textScore" }, status: 1 })
-    .limit(limit);
-    }else{
-          products = await productModel.find(
-      { $text: { $search: searchValue } },
-      { score: { $meta: "textScore" }, purchasePrice:0 }
-    )
-    .sort({ score: { $meta: "textScore" }, status: 1 })
-    .limit(limit);
-    }
+    let products = await productModel
+      .find(query, { score: { $meta: "textScore" }, purchasePrice: 0 })
+      .sort({ score: { $meta: "textScore" } })
+      .limit(limit)
+      .lean();
 
-   
-    if (products.length === 0) {
-      products = await productModel.find({
+    if (!products.length) {
+      const fallbackQuery = {
+        ...(category && { category }),
         $or: [
-          { productName: { $regex: searchValue, $options: "i" } },
-          { description: { $regex: searchValue, $options: "i" } },
-          { category: { $regex: searchValue, $options: "i" } }
+          { productName: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } }
         ]
-      })
-      .limit(limit);
+      };
+
+      products = await productModel.find(fallbackQuery).limit(limit).lean();
     }
 
     res.status(200).json({
@@ -358,7 +348,6 @@ exports.search = async (req, res) => {
     res.status(500).json({ message: "حدث خطأ أثناء البحث: " + err.message });
   }
 };
-
 // UPDATE product
 exports.updateProduct = async (req, res) => {
   try {
