@@ -34,38 +34,32 @@ exports.addToCart = async (req, res) => {
       cart = new CartModel({ user: userId, items: [] });
     }
 
-    items.forEach((newItem) => {
-      const qty = Number(newItem.quantity);
-      if (!qty || isNaN(qty)) return;
+items.forEach((newItem) => {
+  const qty = Number(newItem.quantity);
 
-      const index = cart.items.findIndex(
-        (item) =>
-          item.product.toString() === newItem.product &&
-          item.unit_type === newItem.unit_type
-      );
+  // ❌ block invalid values
+  if (!qty || isNaN(qty) || qty <= 0) return;
 
-      // 🔥 نجيب stock من frontend (أو الأفضل من DB لاحقًا)
-      const maxStock =
-        newItem.unit_type === "قطعة"
-          ? newItem.totalUnits
-          : newItem.availableQuantity;
+  const index = cart.items.findIndex(
+    (item) =>
+      item.product.toString() === newItem.product &&
+      item.unit_type === newItem.unit_type
+  );
 
-      if (index > -1) {
-        const currentQty = cart.items[index].quantity;
+  if (index > -1) {
+    const currentQty = Number(cart.items[index].quantity) || 0;
 
-        let newQty = currentQty + qty;
+    const newQty = currentQty + qty;
 
-        // 🔥 HARD CAP
-        cart.items[index].quantity = Math.min(newQty, maxStock);
-      } else {
-        cart.items.push({
-          product: newItem.product,
-          quantity: Math.min(qty, maxStock),
-          unit_type: newItem.unit_type
-        });
-      }
+    cart.items[index].quantity = isNaN(newQty) ? currentQty : newQty;
+  } else {
+    cart.items.push({
+      product: newItem.product,
+      quantity: qty,
+      unit_type: newItem.unit_type
     });
-
+  }
+});
     await cart.save();
 
     return res.status(200).json({
