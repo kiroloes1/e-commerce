@@ -27,6 +27,8 @@ router.get('/search/query', productController.search);
 //  Get all categories (filter products by category)
 router.get('/categories/all', productController.filterProductBasedOnCategory);
 
+// get suggestion
+router.get('/suggestion', productController.suggestion);
 
 router.use(authMiddleware.protected);
 
