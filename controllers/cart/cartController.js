@@ -17,6 +17,25 @@ exports.getCartByUser = async (req, res) => {
     } catch (err) {
         return res.status(500).json({ message: "Server error", error: err.message });
     }
+};const CartModel=require(`${__dirname}/../../models/cart`);
+
+// get cart by user must be login first
+exports.getCartByUser = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+    const cart = await CartModel.findOne({ user: userId })
+  .populate("items.product", "-purchasePrice");
+
+        if (!cart) {
+            return res.status(404).json({ message: "Cart not found" });
+        }
+
+        return res.status(200).json(cart);
+
+    } catch (err) {
+        return res.status(500).json({ message: "Server error", error: err.message });
+    }
 };
 
 // create 
@@ -25,7 +44,7 @@ exports.addToCart = async (req, res) => {
     const { userId } = req.user;
     const { items } = req.body;
 
-    let cart = await CartModel.findOne({ user: userId });
+    let cart = await CartModel.findOne({ user: userId }).populate("items.product");
 
     if (!cart) {
       cart = await CartModel.create({
@@ -42,15 +61,32 @@ exports.addToCart = async (req, res) => {
     items.forEach((newItem) => {
       const index = cart.items.findIndex(
         (item) =>
-          item.product.toString() === newItem.product &&
+          item.product._id.toString() === newItem.product &&
           item.unit_type === newItem.unit_type
       );
 
-      if (index > -1) {
-        // 🔥 merge
-        cart.items[index].quantity += newItem.quantity;
+      let maxQty = 0;
+
+      const product = newItem.product;
+
+      if (newItem.unit_type === "قطعة") {
+        maxQty = product.totalUnits;
       } else {
-        cart.items.push(newItem);
+        maxQty = product.availableQuantity;
+      }
+
+      if (index > -1) {
+        let newQty =
+          cart.items[index].quantity + newItem.quantity;
+
+        // clamp
+        cart.items[index].quantity = Math.min(newQty, maxQty);
+      } else {
+        cart.items.push({
+          product: newItem.product,
+          quantity: Math.min(newItem.quantity, maxQty),
+          unit_type: newItem.unit_type
+        });
       }
     });
 
@@ -99,6 +135,25 @@ exports.updateCart = async (req, res) => {
       error: err.message
     });
   }
+};
+// delete cart by user must be login first
+exports.deleteCartByUser = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+        const cart = await CartModel.findOneAndDelete({ user: userId });
+
+        if (!cart) {
+            return res.status(404).json({ message: "Cart not found" });
+        }
+
+        return res.status(200).json({
+            message: "Cart deleted successfully"
+        });
+
+    } catch (err) {
+        return res.status(500).json({ message: "Server error", error: err.message });
+    }
 };
 // delete cart by user must be login first
 exports.deleteCartByUser = async (req, res) => {
