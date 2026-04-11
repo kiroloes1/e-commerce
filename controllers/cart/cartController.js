@@ -41,26 +41,12 @@ exports.updateOrCreateCartByUser = async (req, res) => {
       });
     }
 
-    items.forEach((newItem) => {
-      const index = cart.items.findIndex(
-        (item) =>
-          item.product.toString() === newItem.product &&
-          item.unit_type === newItem.unit_type
-      );
-
-      if (index > -1) {
-        // نفس المنتج + نفس النوع → نزود
-        cart.items[index].quantity += newItem.quantity;
-      } else {
-        // مختلف → نضيف item جديد
-        cart.items.push(newItem);
-      }
-    });
+    cart.items = items;
 
     await cart.save();
 
     return res.status(200).json({
-      message: "Cart updated",
+      message: "Cart updated (replaced)",
       cart
     });
 
