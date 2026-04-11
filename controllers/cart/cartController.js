@@ -1,5 +1,5 @@
 const CartModel=require(`${__dirname}/../../models/cart`);
-const productModel = require(`${__dirname}/../../models/product`);
+const ProductModel = require(`${__dirname}/../../models/product`);
 // get cart by user must be login first
 exports.getCartByUser = async (req, res) => {
     try {
