@@ -20,6 +20,9 @@ exports.getCartByUser = async (req, res) => {
 };
 
 // create 
+
+
+
 exports.addToCart = async (req, res) => {
   try {
     const { userId } = req.user;
@@ -28,15 +31,11 @@ exports.addToCart = async (req, res) => {
     let cart = await CartModel.findOne({ user: userId });
 
     if (!cart) {
-      cart = new CartModel({
-        user: userId,
-        items: []
-      });
+      cart = new CartModel({ user: userId, items: [] });
     }
 
     items.forEach((newItem) => {
       const qty = Number(newItem.quantity);
-
       if (!qty || isNaN(qty)) return;
 
       const index = cart.items.findIndex(
@@ -45,12 +44,23 @@ exports.addToCart = async (req, res) => {
           item.unit_type === newItem.unit_type
       );
 
+      // 🔥 نجيب stock من frontend (أو الأفضل من DB لاحقًا)
+      const maxStock =
+        newItem.unit_type === "قطعة"
+          ? newItem.totalUnits
+          : newItem.availableQuantity;
+
       if (index > -1) {
-        cart.items[index].quantity += qty;
+        const currentQty = cart.items[index].quantity;
+
+        let newQty = currentQty + qty;
+
+        // 🔥 HARD CAP
+        cart.items[index].quantity = Math.min(newQty, maxStock);
       } else {
         cart.items.push({
           product: newItem.product,
-          quantity: qty,
+          quantity: Math.min(qty, maxStock),
           unit_type: newItem.unit_type
         });
       }
@@ -59,9 +69,10 @@ exports.addToCart = async (req, res) => {
     await cart.save();
 
     return res.status(200).json({
-      message: "Cart updated",
+      message: "Cart updated with stock limit",
       cart
     });
+
   } catch (err) {
     return res.status(500).json({
       message: "Server error",
