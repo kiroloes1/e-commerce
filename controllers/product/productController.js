@@ -350,9 +350,17 @@ exports.search = async (req, res) => {
   }
 };
 
+// suggestion 
 exports.suggestion=async(req,res)=>{
     try{
-      const suggestion =await productModel.find({},{category:1,description:1,productName:1});
+      const {category}=req.body
+      let suggestion;
+      if(category){
+       suggestion =await productModel.find({category:category},{category:1,description:1,productName:1});
+         
+      }else{
+       suggestion =await productModel.find({},{category:1,description:1,productName:1});
+      }
           res.status(200).json({
           message: `تم العثور على ${suggestion.length} منتج(ات)`,
           data: suggestion
