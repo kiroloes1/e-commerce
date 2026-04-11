@@ -254,7 +254,6 @@ exports.getProductsByCategory = async (req, res) => {
     });
   }
 };
-
 // GET product by ID
 exports.getProductById = async (req, res) => {
   try {
@@ -350,6 +349,7 @@ exports.search = async (req, res) => {
   }
 };
 
+// suggestion 
 exports.suggestion = async (req, res) => {
   try {
     const { category } = req.query;
@@ -380,7 +380,6 @@ exports.suggestion = async (req, res) => {
     });
   }
 };
-
 // UPDATE product
 exports.updateProduct = async (req, res) => {
   try {
