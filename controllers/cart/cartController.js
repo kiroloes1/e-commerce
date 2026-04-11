@@ -25,47 +25,32 @@ exports.addToCart = async (req, res) => {
     const { userId } = req.user;
     const { items } = req.body;
 
-    let cart = await CartModel.findOne({ user: userId }).populate("items.product");
+    let cart = await CartModel.findOne({ user: userId });
 
     if (!cart) {
-      cart = await CartModel.create({
+      cart = new CartModel({
         user: userId,
-        items
-      });
-
-      return res.status(201).json({
-        message: "Cart created",
-        cart
+        items: []
       });
     }
 
     items.forEach((newItem) => {
+      const qty = Number(newItem.quantity);
+
+      if (!qty || isNaN(qty)) return;
+
       const index = cart.items.findIndex(
         (item) =>
-          item.product._id.toString() === newItem.product &&
+          item.product.toString() === newItem.product &&
           item.unit_type === newItem.unit_type
       );
 
-      let maxQty = 0;
-
-      const product = newItem.product;
-
-      if (newItem.unit_type === "قطعة") {
-        maxQty = product.totalUnits;
-      } else {
-        maxQty = product.availableQuantity;
-      }
-
       if (index > -1) {
-        let newQty =
-          cart.items[index].quantity + newItem.quantity;
-
-        // clamp
-        cart.items[index].quantity = Math.min(newQty, maxQty);
+        cart.items[index].quantity += qty;
       } else {
         cart.items.push({
           product: newItem.product,
-          quantity: Math.min(newItem.quantity, maxQty),
+          quantity: qty,
           unit_type: newItem.unit_type
         });
       }
@@ -74,10 +59,9 @@ exports.addToCart = async (req, res) => {
     await cart.save();
 
     return res.status(200).json({
-      message: "Item added to cart",
+      message: "Cart updated",
       cart
     });
-
   } catch (err) {
     return res.status(500).json({
       message: "Server error",
@@ -85,7 +69,6 @@ exports.addToCart = async (req, res) => {
     });
   }
 };
-
 // update
 exports.updateCart = async (req, res) => {
   try {
@@ -100,16 +83,18 @@ exports.updateCart = async (req, res) => {
       });
     }
 
- 
-    cart.items = items;
+    cart.items = (items || []).map((item) => ({
+      product: item.product,
+      quantity: Number(item.quantity) || 1,
+      unit_type: item.unit_type
+    }));
 
     await cart.save();
 
-    return res.status(200).json({
-      message: "Cart updated (replaced)",
+    return res.json({
+      message: "Cart replaced",
       cart
     });
-
   } catch (err) {
     return res.status(500).json({
       message: "Server error",
