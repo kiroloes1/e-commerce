@@ -17,25 +17,6 @@ exports.getCartByUser = async (req, res) => {
     } catch (err) {
         return res.status(500).json({ message: "Server error", error: err.message });
     }
-};const CartModel=require(`${__dirname}/../../models/cart`);
-
-// get cart by user must be login first
-exports.getCartByUser = async (req, res) => {
-    try {
-        const { userId } = req.user;
-
-    const cart = await CartModel.findOne({ user: userId })
-  .populate("items.product", "-purchasePrice");
-
-        if (!cart) {
-            return res.status(404).json({ message: "Cart not found" });
-        }
-
-        return res.status(200).json(cart);
-
-    } catch (err) {
-        return res.status(500).json({ message: "Server error", error: err.message });
-    }
 };
 
 // create 
@@ -119,7 +100,7 @@ exports.updateCart = async (req, res) => {
       });
     }
 
-    // 🔥 replace كامل
+ 
     cart.items = items;
 
     await cart.save();
@@ -135,25 +116,6 @@ exports.updateCart = async (req, res) => {
       error: err.message
     });
   }
-};
-// delete cart by user must be login first
-exports.deleteCartByUser = async (req, res) => {
-    try {
-        const { userId } = req.user;
-
-        const cart = await CartModel.findOneAndDelete({ user: userId });
-
-        if (!cart) {
-            return res.status(404).json({ message: "Cart not found" });
-        }
-
-        return res.status(200).json({
-            message: "Cart deleted successfully"
-        });
-
-    } catch (err) {
-        return res.status(500).json({ message: "Server error", error: err.message });
-    }
 };
 // delete cart by user must be login first
 exports.deleteCartByUser = async (req, res) => {
