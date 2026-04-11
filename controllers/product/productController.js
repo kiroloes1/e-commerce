@@ -254,6 +254,7 @@ exports.getProductsByCategory = async (req, res) => {
     });
   }
 };
+
 // GET product by ID
 exports.getProductById = async (req, res) => {
   try {
@@ -348,6 +349,21 @@ exports.search = async (req, res) => {
     res.status(500).json({ message: "حدث خطأ أثناء البحث: " + err.message });
   }
 };
+
+// suggestion 
+exports.suggestion=async(req,res)=>{
+    try{
+      const suggestion =await productModel.find({},{category:1,description:1,productName:1});
+          res.status(200).json({
+          message: `تم العثور على ${suggestion.length} منتج(ات)`,
+          data: suggestion
+        });
+
+    } catch (err) {
+    res.status(500).json({ message: "حدث خطأ أثناء البحث: " + err.message });
+  }
+}
+
 // UPDATE product
 exports.updateProduct = async (req, res) => {
   try {
