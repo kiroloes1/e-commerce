@@ -20,9 +20,6 @@ exports.getCartByUser = async (req, res) => {
 };
 
 // create 
-
-
-
 exports.addToCart = async (req, res) => {
   try {
     const { userId } = req.user;
@@ -34,36 +31,49 @@ exports.addToCart = async (req, res) => {
       cart = new CartModel({ user: userId, items: [] });
     }
 
-items.forEach((newItem) => {
-  const qty = Number(newItem.quantity);
+    for (const newItem of items) {
+      const qty = Number(newItem.quantity);
+      if (!qty || isNaN(qty)) continue;
 
-  // ❌ block invalid values
-  if (!qty || isNaN(qty) || qty <= 0) return;
+      // 🔥 هات المنتج من DB عشان نعرف max الحقيقي
+      const product = await ProductModel.findById(newItem.product);
+      if (!product) continue;
 
-  const index = cart.items.findIndex(
-    (item) =>
-      item.product.toString() === newItem.product &&
-      item.unit_type === newItem.unit_type
-  );
+      const maxStock =
+        newItem.unit_type === "قطعة"
+          ? product.totalUnits
+          : product.availableQuantity;
 
-  if (index > -1) {
-    const currentQty = Number(cart.items[index].quantity) || 0;
+      const index = cart.items.findIndex(
+        (item) =>
+          item.product.toString() === newItem.product &&
+          item.unit_type === newItem.unit_type
+      );
 
-    const newQty = currentQty + qty;
+      if (index > -1) {
+        const currentQty = Number(cart.items[index].quantity) || 0;
 
-    cart.items[index].quantity = isNaN(newQty) ? currentQty : newQty;
-  } else {
-    cart.items.push({
-      product: newItem.product,
-      quantity: qty,
-      unit_type: newItem.unit_type
-    });
-  }
-});
+        let newQty = currentQty + qty;
+
+        // 🔥 CLAMP
+        if (newQty > maxStock) {
+          newQty = maxStock;
+        }
+
+        cart.items[index].quantity = newQty;
+      } else {
+        cart.items.push({
+          product: newItem.product,
+          unit_type: newItem.unit_type,
+          quantity: qty > maxStock ? maxStock : qty
+        });
+      }
+    }
+
     await cart.save();
 
     return res.status(200).json({
-      message: "Cart updated with stock limit",
+      message: "Cart updated with stock validation",
       cart
     });
 
@@ -74,6 +84,7 @@ items.forEach((newItem) => {
     });
   }
 };
+
 // update
 exports.updateCart = async (req, res) => {
   try {
@@ -88,18 +99,36 @@ exports.updateCart = async (req, res) => {
       });
     }
 
-    cart.items = (items || []).map((item) => ({
-      product: item.product,
-      quantity: Number(item.quantity) || 1,
-      unit_type: item.unit_type
-    }));
+    const newItems = [];
+
+    for (const item of items) {
+      const qty = Number(item.quantity);
+      if (!qty || isNaN(qty)) continue;
+
+      const product = await ProductModel.findById(item.product);
+      if (!product) continue;
+
+      const maxStock =
+        item.unit_type === "قطعة"
+          ? product.totalUnits
+          : product.availableQuantity;
+
+      newItems.push({
+        product: item.product,
+        unit_type: item.unit_type,
+        quantity: qty > maxStock ? maxStock : qty
+      });
+    }
+
+    cart.items = newItems;
 
     await cart.save();
 
-    return res.json({
-      message: "Cart replaced",
+    return res.status(200).json({
+      message: "Cart replaced with validation",
       cart
     });
+
   } catch (err) {
     return res.status(500).json({
       message: "Server error",
