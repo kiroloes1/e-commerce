@@ -350,44 +350,18 @@ exports.search = async (req, res) => {
   }
 };
 
-// suggestion 
-// suggestion 
-exports.suggestion = async (req, res) => {
-  try {
-    const { keyword } = req.query;
+exports.suggestion=async(req,res)=>{
+    try{
+      const suggestion =await productModel.find({},{category:1,description:1,productName:1});
+          res.status(200).json({
+          message: `تم العثور على ${suggestion.length} منتج(ات)`,
+          data: suggestion
+        });
 
-    let filter = {};
-
-   
-    if (keyword) {
-      filter = {
-        $or: [
-          { productName: { $regex: keyword, $options: "i" } },
-          { category: { $regex: keyword, $options: "i" } },
-          { description: { $regex: keyword, $options: "i" } }
-        ]
-      };
-    }
-
-    const suggestion = await productModel
-      .find(filter, {
-        productName: 1,
-        category: 1,
-        description: 1
-      })
-      .limit(10); 
-
-    res.status(200).json({
-      message: `تم العثور على ${suggestion.length} منتج(ات)`,
-      data: suggestion
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      message: "حدث خطأ أثناء البحث: " + err.message
-    });
+    } catch (err) {
+    res.status(500).json({ message: "حدث خطأ أثناء البحث: " + err.message });
   }
-};
+}
 
 // UPDATE product
 exports.updateProduct = async (req, res) => {
