@@ -13,7 +13,9 @@ router.get("/", cartController.getCartByUser);
 
 
 //  Create or Update cart (send full items array)
-router.post("/", cartController.updateOrCreateCartByUser);
+router.post("/", cartController.addToCart);
+
+router.put("/", cartController.updateCart);
 
 
 //  Delete cart
