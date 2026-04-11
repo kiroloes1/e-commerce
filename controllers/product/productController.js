@@ -353,7 +353,7 @@ exports.search = async (req, res) => {
 // suggestion 
 exports.suggestion=async(req,res)=>{
     try{
-      const {category}=req.body
+      const { category } = req.query;
       let suggestion;
       if(category){
        suggestion =await productModel.find({category:category},{category:1,description:1,productName:1});
