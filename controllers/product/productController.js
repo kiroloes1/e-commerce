@@ -350,26 +350,36 @@ exports.search = async (req, res) => {
   }
 };
 
-// suggestion 
-exports.suggestion=async(req,res)=>{
-    try{
-      const { category } = req.query;
-      let suggestion;
-      if(category){
-       suggestion =await productModel.find({category:category},{category:1,description:1,productName:1});
-         
-      }else{
-       suggestion =await productModel.find({},{category:1,description:1,productName:1});
-      }
-          res.status(200).json({
-          message: `تم العثور على ${suggestion.length} منتج(ات)`,
-          data: suggestion
-        });
+exports.suggestion = async (req, res) => {
+  try {
+    const { category } = req.query;
 
-    } catch (err) {
-    res.status(500).json({ message: "حدث خطأ أثناء البحث: " + err.message });
+    let filter = {};
+
+    if (category) {
+      filter.category = category;
+    }
+
+    const suggestion = await productModel.find(
+      filter,
+      {
+        category: 1,
+        description: 1,
+        productName: 1
+      }
+    ).limit(10); // ⚡ مهم
+
+    res.status(200).json({
+      message: `تم العثور على ${suggestion.length} منتج(ات)`,
+      data: suggestion
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "حدث خطأ أثناء البحث: " + err.message
+    });
   }
-}
+};
 
 // UPDATE product
 exports.updateProduct = async (req, res) => {
