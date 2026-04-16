@@ -148,7 +148,6 @@ orderSchema.index({ orderNumber: 1 }, { unique: true });
 orderSchema.pre("save", function (next) {
     this.finalPrice = this.totalPrice + this.shippingPrice;
 
-    next();
 });
 
 
@@ -157,7 +156,7 @@ orderSchema.pre("validate", function (next) {
     if (!this.orderNumber) {
         this.orderNumber = `ORD-${Date.now()}`;
     }
-    next();
+ 
 });
 
 
