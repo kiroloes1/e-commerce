@@ -121,10 +121,17 @@ exports.createOrder=async(req,res)=>{
 
         // upload image
          let result;
-         if(req.file &&  payment.method!="cash") {
-            result = await uploadToCloud.uploadToCloud(req.file, `wallet/proofImageOrder`);
-         }
-
+        
+        if (payment.method === "wallet") {
+            if (!req.file) {
+                throw new Error("يجب ارفاق صورة اثبات الدفع");
+            }
+        
+            result = await uploadToCloud.uploadToCloud(
+                req.file,
+                "wallet/proofImageOrder"
+            );
+        }
 
         // create new order
         const createOrder=await Order.create([{
