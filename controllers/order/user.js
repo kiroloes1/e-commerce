@@ -11,6 +11,7 @@ exports.createOrder=async(req,res)=>{
     let  session;
     try{
         const {userId}=req.user;
+        console.log(req.file)
         // remember that , items are objects and address is a object
         const {customerName,phone}=req.body;
         const items =
