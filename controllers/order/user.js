@@ -128,6 +128,7 @@ exports.createOrder=async(req,res)=>{
         // create new order
         const createOrder=await Order.create([{
              user:userId,
+             customerName,
              items,
              totalPrice:totalPrice,
              shippingPrice:req.body.shippingPrice || 0,
@@ -137,7 +138,8 @@ exports.createOrder=async(req,res)=>{
                 method:payment.method || "cash",
                 walletPhone:payment.walletPhone,
                 proofImage:result
-             }
+             },
+            finalPrice:shippingPrice+totalPrice
 
 
         }], { session });
