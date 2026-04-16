@@ -139,7 +139,7 @@ exports.createOrder=async(req,res)=>{
                 walletPhone:payment.walletPhone,
                 proofImage:result
              },
-            finalPrice:shippingPrice+totalPrice
+            finalPrice:(req.body.shippingPrice || 0)+totalPrice
 
 
         }], { session });
