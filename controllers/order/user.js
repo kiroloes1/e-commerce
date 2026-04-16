@@ -11,8 +11,21 @@ exports.createOrder=async(req,res)=>{
     try{
         const {userId}=req.user;
         // remember that , items are objects and address is a object
-        const {customerName,phone,address,payment}=req.body;
-        const items = req.body.items || [];
+        const {customerName,phone}=req.body;
+        const items =
+          typeof req.body.items === "string"
+            ? JSON.parse(req.body.items)
+            : req.body.items || [];
+
+        const address =
+      typeof req.body.address === "string"
+        ? JSON.parse(req.body.address)
+        : req.body.address || {};
+    
+    const payment =
+      typeof req.body.payment === "string"
+        ? JSON.parse(req.body.payment)
+        : req.body.payment || {};
 
         // check items 
         if(items.length==0){
@@ -45,7 +58,7 @@ exports.createOrder=async(req,res)=>{
         
 
         // start sesion and transaction
-        const session=await mongoose.startSession();
+        let  session=await mongoose.startSession();
         session.startTransaction();
 
         // reduce producr quantity + calc subtotal 
@@ -111,7 +124,7 @@ exports.createOrder=async(req,res)=>{
              user:userId,
              items,
              totalPrice:totalPrice,
-             shippingPrice:req.shippingPrice || 0,
+             shippingPrice:req.body.shippingPrice || 0,
              phone,
              address,
              payment:{
