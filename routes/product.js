@@ -31,6 +31,7 @@ router.get('/suggestion', productController.suggestion);
 //  Get product by ID
 router.get('/:id', productController.getProductById);
 
+
 router.use(authMiddleware.protected);
 
 router.use(authorization.role('admin'));

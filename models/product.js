@@ -9,7 +9,8 @@ const productSchema = new mongoose.Schema({
 
     unit_type: { 
         type: String,
-        required: true   
+        required: true,
+        enum:["قطعة","كرتونه"]   
     }, 
 
     unitsPerPackage: { 
@@ -25,6 +26,7 @@ const productSchema = new mongoose.Schema({
 
       totalUnits: { 
         type: Number 
+        
     }, // auto calc
 
 
@@ -43,6 +45,10 @@ const productSchema = new mongoose.Schema({
         type: String, 
         enum: ["active", "inactive", "out-of-stock"], 
         default: "active" 
+    },
+    _skipInventoryHook:{
+        type:Boolean,
+        default:false,
     }
 
 }, { timestamps: true });
@@ -50,8 +56,10 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ productName: "text", description: "text",category :"text"});
 productSchema.pre('save', function(next) {
 
-   
-    this.totalUnits = this.availableQuantity * this.unitsPerPackage;
+   if (!this._skipInventoryHook) {
+        this.totalUnits =( this.availableQuantity * this.unitsPerPackage);
+
+   }
 
     if (this.availableQuantity > 0) {
         this.status = "active";

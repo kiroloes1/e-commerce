@@ -33,7 +33,7 @@ exports.addToCart = async (req, res) => {
       const qty = Number(newItem.quantity);
       if (!qty || isNaN(qty)) continue;
 
-      // 🔥 هات المنتج من DB عشان نعرف max الحقيقي
+  
       const product = await ProductModel.findById(newItem.product);
       if (!product) continue;
 
@@ -53,7 +53,7 @@ exports.addToCart = async (req, res) => {
 
         let newQty = currentQty + qty;
 
-        // 🔥 CLAMP
+        //  CLAMP
         if (newQty > maxStock) {
           newQty = maxStock;
         }
