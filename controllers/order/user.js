@@ -82,7 +82,7 @@ exports.createOrder=async(req,res)=>{
                         // productRef.totalUnits =( productRef.availableQuantity * productRef.unitsPerPackage) + (productRef.availableQuantity % productRef.unitsPerPackage );
                     }else{
                         productRef.availableQuantity-=item.quantity;
-                        productRef.totalUnits =( productRef.availableQuantity * productRef.unitsPerPackage) ;
+                        // productRef.totalUnits =( productRef.availableQuantity * productRef.unitsPerPackage) ;
                     }
                 }
 
@@ -91,7 +91,7 @@ exports.createOrder=async(req,res)=>{
                      throw Error(" الكميه المطلوبه اكبر من المخزون ")
                 }else{
                     productRef.availableQuantity-=item.quantity;  
-                    productRef.totalUnits =( productRef.availableQuantity * productRef.unitsPerPackage) ;
+                    productRef.totalUnits -=( item.quantity * productRef.unitsPerPackage) ;
 
                 }
 
