@@ -122,7 +122,7 @@ exports.createOrder=async(req,res)=>{
         // upload image
          let result;
          if(req.file &&  payment.method!="cash") {
-          result = await uploadToCloud.uploadToCloud(req.file, `${folderBase}/proofImageOrder`);
+            result = await uploadToCloud.uploadToCloud(req.file, `${"wallet"}/proofImageOrder`);
          }
 
 
