@@ -187,12 +187,129 @@ exports.createOrder=async(req,res)=>{
 }
 
 
+
 // View my orders
+exports.viewMyOrders = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+        const orders = await Order.find({ user: userId })
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            results: orders.length,
+            orders
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
+};
 
 
-// view order
+// view order by id
+exports.viewMyOrder = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { id } = req.params;
+
+        const order = await Order.findOne({
+            _id: id,
+            user: userId
+        });
+
+        if (!order) {
+            return res.status(404).json({
+                message: "الطلب غير موجود"
+            });
+        }
+
+        res.status(200).json({
+            order
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
+};
 
 
 // Delete pending order (cancel order)
+exports.cancelOrder = async (req, res) => {
+    let session;
+    try {
+        const { userId } = req.user;
+        const { id } = req.params;
+
+        session = await mongoose.startSession();
+        session.startTransaction();
+
+        const order = await Order.findOne({ _id: id, user: userId }).session(session);
+
+        if (!order) {
+            throw new Error("الطلب غير موجود");
+        }
+
+        if (order.status !== "pending") {
+            throw new Error("لا يمكن الغاء الطلب بعد تأكيده");
+        }
+
+        // return all items
+        for (const item of order.items) {
+            const product = await Product.findById(item.product).session(session);
+
+            if (!product) continue;
+
+            if (item.unit_type === "قطعة") {
+                product.totalUnits += item.quantity;
+
+                if (product.unit_type === "كرتونه") {
+                    product.availableQuantity = Math.floor(
+                        product.totalUnits / product.unitsPerPackage
+                    );
+                } else {
+                    product.availableQuantity += item.quantity;
+                }
+
+            } else if (item.unit_type === "كرتونه") {
+                product.availableQuantity += item.quantity;
+                product.totalUnits += item.quantity * product.unitsPerPackage;
+            }
+
+            product._skipInventoryHook = true;
+            await product.save({ session });
+        }
+
+      
+        // update order
+        order.status = "cancelled";
+        order.cancelledAt = new Date();
+
+        await order.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).json({
+            message: "تم الغاء الطلب بنجاح",
+            order
+        });
+
+    } catch (err) {
+        if (session) {
+            await session.abortTransaction();
+            session.endSession();
+        }
+
+        res.status(500).json({
+            message: err.message
+        });
+    }
+};
+
 
 
