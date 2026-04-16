@@ -66,6 +66,13 @@ exports.createOrder=async(req,res)=>{
 
         // reduce producr quantity + calc subtotal 
         for (const item of items){
+                    if (!item.product || !item.quantity || !item.price) {
+            throw new Error("Invalid item data");
+        }
+        
+        if (isNaN(item.quantity) || isNaN(item.price)) {
+            throw new Error("Invalid numbers");
+        }
             const productRef=await Product.findById(item.product).session(session);
             if (!productRef) {
     throw new Error(`Product not found: ${item.product}`);
@@ -100,7 +107,8 @@ exports.createOrder=async(req,res)=>{
             productRef._skipInventoryHook=true; 
             await productRef.save({ session });
 
-            item.subtotal=item.quantity * item.price;
+            item.subtotal = Number(item.quantity) * Number(item.price);
+            // item.subtotal=item.quantity * item.price;
          }
 
 
@@ -152,20 +160,24 @@ exports.createOrder=async(req,res)=>{
 
         }], { session });
 
+             await session.commitTransaction();
+        session.endSession();
+
         res.status(201).json({
             message:"تم انشاء الطلب بنجاح ",
             createOrder
         })
 
-        await session.commitTransaction();
-        session.endSession();
+   
 
 
     }catch (err) {
 
         // rollback
-        await session.abortTransaction();
-        session.endSession();
+        if (session) {
+            await session.abortTransaction();
+            session.endSession();
+        }
 
         res.status(500).json({
             message: err.message
