@@ -8,36 +8,12 @@ const mongoose=require('mongoose');
 
 // Create order
 exports.createOrder=async(req,res)=>{
-
-
     try{
         const {userId}=req.user;
         // remember that , items are objects and address is a object
-        const {phone,customerName}=req.body;
-        const items = req.body.items ? JSON.parse(req.body.items) : [];
+        const {customerName,phone,address,payment}=req.body;
+        const items = req.body.items || [];
 
-           let address = {};
-let payment = {};
-
-try {
-  address =
-    typeof req.body.address === "string"
-      ? JSON.parse(req.body.address)
-      : req.body.address || {};
-} catch (e) {
-  throw new Error("Invalid address format");
-}
-
-try {
-  payment =
-    typeof req.body.payment === "string"
-      ? JSON.parse(req.body.payment)
-      : req.body.payment || {};
-} catch (e) {
-  throw new Error("Invalid payment format");
-}
-
-    
         // check items 
         if(items.length==0){
             return res.status(400).json({
@@ -128,6 +104,8 @@ try {
          if(req.file) {
           result = await uploadToCloud.uploadToCloud(req.file, `${folderBase}/proofImageOrder`);
          }
+
+
         // create new order
         const createOrder=await Order.create([{
              user:userId,
