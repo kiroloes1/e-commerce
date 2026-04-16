@@ -12,7 +12,7 @@ const uploads=multer({strong:strong})
 router.use(authMiddleware.protected);
 
 //  Create order 
-router.post('/', uploads.single('file'), orderUser.createOrder);
+router.post('/', upload.single('file'), orderUser.createOrder);
 
 
 module.exports = router;
