@@ -15,8 +15,13 @@ exports.createOrder=async(req,res)=>{
         const items = req.body.items ? JSON.parse(req.body.items) : [];
 
        
-        const address = JSON.parse(req.body.address);
-        const payment = JSON.parse(req.body.payment);
+    const address = req.body.address
+  ? JSON.parse(req.body.address)
+  : {};
+
+const payment = req.body.payment
+  ? JSON.parse(req.body.payment)
+  : {};
         // check items 
         if(items.length==0){
             return res.status(400).json({
