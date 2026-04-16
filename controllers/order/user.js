@@ -78,7 +78,7 @@ exports.createOrder=async(req,res)=>{
                     productRef.totalUnits-=item.quantity;
                     if(productRef.unit_type=="كرتونه"){
                         const count=Math.floor(productRef.totalUnits/productRef.unitsPerPackage);
-                        productRef.availableQuantity-=count
+                        productRef.availableQuantity=count
                         // productRef.totalUnits =( productRef.availableQuantity * productRef.unitsPerPackage) + (productRef.availableQuantity % productRef.unitsPerPackage );
                     }else{
                         productRef.availableQuantity-=item.quantity;
