@@ -15,5 +15,10 @@ router.use(authMiddleware.protected);
 //  Create order 
 router.post('/', upload.single('file'), orderUser.createOrder);
 
+router.get('/', orderUser.viewMyOrders);
+
+router.get('/:id',  orderUser.viewMyOrder);
+
+router.patch('/:id', orderUser.cancelOrder);
 
 module.exports = router;
