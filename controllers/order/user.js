@@ -14,7 +14,7 @@ exports.createOrder=async(req,res)=>{
         const {phone}=req.body;
         const items = req.body.items ? JSON.parse(req.body.items) : [];
 
-        const items = JSON.parse(req.body.items);
+       
         const address = JSON.parse(req.body.address);
         const payment = JSON.parse(req.body.payment);
         // check items 
