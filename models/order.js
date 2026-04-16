@@ -138,9 +138,7 @@ const orderSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-// INDEXES
-orderSchema.index({ user: 1 });
-orderSchema.index({ orderNumber: 1 }, { unique: true });
+
 
 
 
