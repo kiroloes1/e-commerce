@@ -8,6 +8,7 @@ const mongoose=require('mongoose');
 
 // Create order
 exports.createOrder=async(req,res)=>{
+    let  session;
     try{
         const {userId}=req.user;
         // remember that , items are objects and address is a object
@@ -60,7 +61,7 @@ exports.createOrder=async(req,res)=>{
         
 
         // start sesion and transaction
-        let  session=await mongoose.startSession();
+          session=await mongoose.startSession();
         session.startTransaction();
 
         // reduce producr quantity + calc subtotal 
