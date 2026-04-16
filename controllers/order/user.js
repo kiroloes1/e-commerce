@@ -15,13 +15,27 @@ exports.createOrder=async(req,res)=>{
         const items = req.body.items ? JSON.parse(req.body.items) : [];
 
        
-    const address = req.body.address
-  ? JSON.parse(req.body.address)
-  : {};
+let address = {};
+let payment = {};
 
-const payment = req.body.payment
-  ? JSON.parse(req.body.payment)
-  : {};
+try {
+  address =
+    typeof req.body.address === "string"
+      ? JSON.parse(req.body.address)
+      : req.body.address || {};
+} catch (e) {
+  throw new Error("Invalid address format");
+}
+
+try {
+  payment =
+    typeof req.body.payment === "string"
+      ? JSON.parse(req.body.payment)
+      : req.body.payment || {};
+} catch (e) {
+  throw new Error("Invalid payment format");
+
+    
         // check items 
         if(items.length==0){
             return res.status(400).json({
