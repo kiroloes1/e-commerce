@@ -27,6 +27,8 @@ exports.createOrder=async(req,res)=>{
         ? JSON.parse(req.body.payment)
         : req.body.payment || {};
 
+        console.log(address,payment,items)
+
         // check items 
         if(items.length==0){
             return res.status(400).json({
