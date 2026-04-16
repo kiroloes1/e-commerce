@@ -3,6 +3,7 @@ const router = express.Router();
 const authMiddleware = require(`${__dirname}/../middlewares/authMiddleware`);
 const authorization = require(`${__dirname}/../middlewares/authorization`);
 const orderUser = require(`${__dirname}/../controllers/order/user`);
+const upload = require(`${__dirname}/../config/multerConfig`);
 
 const multer  =require('multer');
 const strong=multer.memoryStorage();
