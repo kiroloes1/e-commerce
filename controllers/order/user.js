@@ -67,6 +67,9 @@ exports.createOrder=async(req,res)=>{
         // reduce producr quantity + calc subtotal 
         for (const item of items){
             const productRef=await Product.findById(item.product).session(session);
+            if (!productRef) {
+    throw new Error(`Product not found: ${item.product}`);
+}
             if(item.unit_type=="قطعة"){
 
                 if(productRef.totalUnits<item.quantity){
