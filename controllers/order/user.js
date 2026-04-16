@@ -11,7 +11,7 @@ exports.createOrder=async(req,res)=>{
     try{
         const {userId}=req.user;
         // remember that , items are objects and address is a object
-        const {phone}=req.body;
+        const {phone,customerName}=req.body;
         const items = req.body.items ? JSON.parse(req.body.items) : [];
 
        
