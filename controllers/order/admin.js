@@ -1,4 +1,4 @@
-const Order=require(`${__dirname}../../models/order`);
+const Order=require(`${__dirname}/../../models/order`);
 
 //view all orders
 exports.viewAllOrders = async (req, res) => {
