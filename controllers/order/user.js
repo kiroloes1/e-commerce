@@ -9,7 +9,14 @@ const mongoose=require('mongoose');
 // Create order
 exports.createOrder=async(req,res)=>{
 
-    let address = {};
+
+    try{
+        const {userId}=req.user;
+        // remember that , items are objects and address is a object
+        const {phone,customerName}=req.body;
+        const items = req.body.items ? JSON.parse(req.body.items) : [];
+
+           let address = {};
 let payment = {};
 
 try {
@@ -28,14 +35,7 @@ try {
       : req.body.payment || {};
 } catch (e) {
   throw new Error("Invalid payment format");
-
-    try{
-        const {userId}=req.user;
-        // remember that , items are objects and address is a object
-        const {phone,customerName}=req.body;
-        const items = req.body.items ? JSON.parse(req.body.items) : [];
-
-       
+}
 
     
         // check items 
