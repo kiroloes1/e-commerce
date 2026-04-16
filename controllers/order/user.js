@@ -100,9 +100,10 @@ exports.createOrder=async(req,res)=>{
 
 
         // upload image
-        const result = await uploadToCloud.uploadToCloud(req.file, `${folderBase}/proofImageOrder`);
-   
-
+         let result;
+         if(req.file) {
+          result = await uploadToCloud.uploadToCloud(req.file, `${folderBase}/proofImageOrder`);
+         }
         // create new order
         const createOrder=await Order.create([{
              user:userId,
