@@ -61,7 +61,7 @@ productSchema.pre('save', function(next) {
 
    }
 
-    if (this.availableQuantity > 0) {
+    if (this.availableQuantity > 0 || this.totalUnits>0) {
         this.status = "active";
     } else {
         this.status = "out-of-stock";
