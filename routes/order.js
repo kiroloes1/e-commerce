@@ -18,6 +18,8 @@ router.post('/', upload.single('file'), orderUser.createOrder);
 router.get('/', orderUser.viewMyOrders);
 router.get('/my/:id', orderUser.viewMyOrder);
 router.patch('/cancel/:id', orderUser.cancelOrder);
+router.get('/bestSeller', orderUser.bestSeller);
+
 
 // ADMIN MIDDLEWARE
 router.use(authorization.role('admin'));
