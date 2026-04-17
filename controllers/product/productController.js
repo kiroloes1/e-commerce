@@ -104,7 +104,7 @@ exports.createFromExcel = async (req, res) => {
       } = product;
 
       // Validate required fields
-      if (!code || !productName || !unit_type || !unitsPerPackage || !availableQuantity ||
+      if (!code || !productName || !unit_type || !unitsPerPackage || availableQuantity<0 ||
           !packageSellingPrice || !pieceSellingPrice || !purchasePrice) {
         skipped++;
         errors.push({
