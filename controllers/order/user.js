@@ -309,5 +309,68 @@ exports.cancelOrder = async (req, res) => {
     }
 };
 
+// bset seller
+
+exports.bestSeller = async (req, res) => {
+  try {
+    const bestSellers = await Order.aggregate([
+      // 1. تفكيك items array
+      { $unwind: "$items" },
+
+      // 2. تجميع المبيعات لكل product
+      {
+        $group: {
+          _id: "$items.product",
+          totalSold: { $sum: "$items.quantity" },
+          totalRevenue: {
+            $sum: {
+              $multiply: ["$items.quantity", "$items.price"]
+            }
+          },
+          productName: { $first: "$items.productName" }
+        }
+      },
+
+      // 3. ترتيب حسب الأكثر مبيعًا
+      { $sort: { totalSold: -1 } },
+
+      // 4. جلب بيانات المنتج من Product collection
+      {
+        $lookup: {
+          from: "products", // اسم الكوليكشن في MongoDB
+          localField: "_id",
+          foreignField: "_id",
+          as: "product"
+        }
+      },
+
+      // 5. تحويل المنتج من array إلى object
+      { $unwind: "$product" },
+
+      // 6. شكل النتيجة النهائي
+      {
+        $project: {
+          _id: 1,
+          totalSold: 1,
+          totalRevenue: 1,
+          product: 1
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      count: bestSellers.length,
+      data: bestSellers
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 
 
