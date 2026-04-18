@@ -208,6 +208,27 @@ exports.viewMyOrders = async (req, res) => {
 };
 
 
+// my confirm order
+exports.viewMyOrdersDeliverd = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+        const orders = await Order.find({ user: userId , status:"delivered"}).populate("items.product" ,"image.url")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            results: orders.length,
+            orders
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
+};
+
+
 // view order by id
 exports.viewMyOrder = async (req, res) => {
     try {
