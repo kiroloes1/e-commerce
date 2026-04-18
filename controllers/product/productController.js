@@ -367,7 +367,7 @@ exports.suggestion = async (req, res) => {
         description: 1,
         productName: 1
       }
-    ).limit(10); // ⚡ مهم
+    );
 
     res.status(200).json({
       message: `تم العثور على ${suggestion.length} منتج(ات)`,
