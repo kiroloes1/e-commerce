@@ -207,7 +207,6 @@ exports.viewMyOrders = async (req, res) => {
     }
 };
 
-
 // my confirm order
 exports.viewMyOrdersDeliverd = async (req, res) => {
     try {
@@ -256,6 +255,7 @@ exports.viewMyOrder = async (req, res) => {
         });
     }
 };
+
 
 // Delete pending order (cancel order)
 exports.cancelOrder = async (req, res) => {
@@ -330,6 +330,7 @@ exports.cancelOrder = async (req, res) => {
     }
 };
 
+
 // bset seller
 
 exports.bestSeller = async (req, res) => {
@@ -355,7 +356,7 @@ exports.bestSeller = async (req, res) => {
       // 3. ترتيب حسب الأكثر مبيعًا
       { $sort: { totalSold: -1 } },
 
-          { $limit: 20 },
+        { $limit: 20 },
       // 4. جلب بيانات المنتج من Product collection
       {
         $lookup: {
@@ -393,6 +394,3 @@ exports.bestSeller = async (req, res) => {
     });
   }
 };
-
-
-

@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require(`${__dirname}/../../models/user`);
 const { Resend } = require('resend');
+const  { SendEmail } =require(`${__dirname}/../../services/nodemilar`);
 
 
 // login 
@@ -109,9 +110,9 @@ exports.updatePassword = async (req, res) => {
 };
 
 // forget password
+
 exports.forgetPassword = async (req, res) => {
   const { email } = req.body;
-  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
     if (!email) {
@@ -123,20 +124,19 @@ exports.forgetPassword = async (req, res) => {
       return res.status(404).json({ message: "إذا كان البريد الإلكتروني موجوداً، تم إرسال رابط إعادة التعيين" });
     }
 
-
     const resetCode = Math.floor(100000 + Math.random() * 900000);
-    const resetExpires = Date.now() + 5 * 60 * 1000; 
+    const resetExpires = Date.now() + 5 * 60 * 1000;
     const hashedResetCode = await bcrypt.hash(resetCode.toString(), 10);
 
     if (user.passwordResetAttempts >= 5) {
-      user.pandding = Date.now() + 60 * 60 * 1000; 
+      user.pandding = Date.now() + 60 * 60 * 1000;
       user.passwordResetAttempts = 0;
       await user.save();
-      return res.status(429).json({ message: "محاولات إعادة تعيين كلمة المرور كثيرة. الرجاء المحاولة لاحقاً." });
+      return res.status(429).json({ message: "محاولات كثيرة. حاول لاحقاً." });
     }
 
     if (user.pandding && Date.now() < user.pandding) {
-      return res.status(429).json({ message: "محاولات إعادة تعيين كلمة المرور كثيرة. الرجاء المحاولة لاحقاً." });
+      return res.status(429).json({ message: "محاولات كثيرة. حاول لاحقاً." });
     }
 
     user.passwordResetCode = hashedResetCode;
@@ -144,17 +144,17 @@ exports.forgetPassword = async (req, res) => {
     user.passwordResetAttempts += 1;
     await user.save();
 
-    await resend.emails.send({
-      to: user.email,
-      from: "Acme <onboarding@resend.dev>",
-      subject: "رمز إعادة تعيين كلمة المرور",
-      html: `<p>رمز إعادة التعيين الخاص بك هو: <strong>${resetCode}</strong></p>`,
+    // هنا الإرسال
+    await SendEmail({
+        to: user.email,
+        subject: "رمز إعادة تعيين كلمة المرور",
+        html: `<p>رمز إعادة التعيين الخاص بك هو: <strong>${resetCode}</strong></p>`
     });
 
-    res.status(200).json({ message: "إذا كان البريد الإلكتروني موجوداً، تم إرسال رابط إعادة التعيين" });
+    res.status(200).json({ message: "تم إرسال الكود بنجاح" });
 
   } catch (err) {
-    res.status(500).json({ message: 'خطأ داخلي في الخادم', error: err.message });
+    res.status(500).json({ message: 'خطأ داخلي', error: err.message });
   }
 };
 

@@ -104,7 +104,7 @@ exports.createFromExcel = async (req, res) => {
       } = product;
 
       // Validate required fields
-      if (!code || !productName || !unit_type || !unitsPerPackage || availableQuantity<0 ||
+      if (!code || !productName || !unit_type || !unitsPerPackage || !availableQuantity ||
           !packageSellingPrice || !pieceSellingPrice || !purchasePrice) {
         skipped++;
         errors.push({
@@ -367,7 +367,7 @@ exports.suggestion = async (req, res) => {
         description: 1,
         productName: 1
       }
-    );
+    )
 
     res.status(200).json({
       message: `تم العثور على ${suggestion.length} منتج(ات)`,
