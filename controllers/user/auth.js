@@ -145,11 +145,18 @@ exports.forgetPassword = async (req, res) => {
     await user.save();
 
     // هنا الإرسال
-    await SendEmail({
-        to: user.email,
-        subject: "رمز إعادة تعيين كلمة المرور",
-        html: `<p>رمز إعادة التعيين الخاص بك هو: <strong>${resetCode}</strong></p>`
-    });
+  await SendEmail({
+    to: user.email,
+    subject: "رمز إعادة تعيين كلمة المرور",
+    html: `
+      <div style="font-family: Arial; text-align: center;">
+        <h2>أبو الدهب للمنتجات الغذائية</h2>
+        <p>رمز إعادة تعيين كلمة المرور الخاص بك:</p>
+        <h1 style="color: #2c3e50;">${resetCode}</h1>
+        <p>هذا الرمز صالح لمدة 5 دقائق فقط</p>
+      </div>
+    `,
+  });
 
     res.status(200).json({ message: "تم إرسال الكود بنجاح" });
 
