@@ -19,6 +19,8 @@ router.get('/', orderUser.viewMyOrders);
 router.get('/my/:id', orderUser.viewMyOrder);
 router.patch('/cancel/:id', orderUser.cancelOrder);
 router.get('/bestSeller', orderUser.bestSeller);
+router.get('/viewMyOrdersDeliverd', orderUser.viewMyOrdersDeliverd);
+
 
 
 // ADMIN MIDDLEWARE
