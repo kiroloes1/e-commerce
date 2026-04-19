@@ -21,7 +21,7 @@ exports.createAbout = async (req, res) => {
 // get about 
 exports.getAbout = async (req, res) => {
   try {
-    const about = await About.findOne();
+    const about = await About.find();
 
     if (!about) {
       return res.status(404).json({
