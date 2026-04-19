@@ -87,6 +87,9 @@ exports.createOrder=async(req,res)=>{
             if(item.unit_type=="قطعة"){
 
                 if(productRef.totalUnits<item.quantity){
+                    console.log("item.product:", item.product);
+        console.log("type:", typeof item.product);
+        console.log("cart items:", cartExist.items);
                      await Cart.updateOne(
                         { _id: cartExist._id },
                         {
