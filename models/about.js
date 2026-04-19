@@ -47,8 +47,15 @@ const aboutSchema = new mongoose.Schema(
     workingHours: {
       type: String,
     },
-
+  walletNumber:[{
+      type: String,
+       unique: true,
+      match: [/^(010|011|012|015)[0-9]{8}$/, 'Invalid Egyptian phone number']
+  }],
   },
+
+
+
   {
     timestamps: true,
   }
