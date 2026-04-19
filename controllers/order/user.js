@@ -84,7 +84,7 @@ exports.createOrder=async(req,res)=>{
                      throw Error(" الكميه المطلوبه اكبر من المخزون ")
                 }else{
                     productRef.totalUnits-=item.quantity;
-                    if(productRef.unit_type=="كرتونه"){
+                    if(productRef.unit_type=="كرتونة"){
                         const count=Math.floor(productRef.totalUnits/productRef.unitsPerPackage);
                         productRef.availableQuantity=count
                         // productRef.totalUnits =( productRef.availableQuantity * productRef.unitsPerPackage) + (productRef.availableQuantity % productRef.unitsPerPackage );
@@ -94,7 +94,7 @@ exports.createOrder=async(req,res)=>{
                     }
                 }
 
-            }else if(item.unit_type=="كرتونه"){
+            }else if(item.unit_type=="كرتونة"){
                    if(productRef.availableQuantity<item.quantity){
                      throw Error(" الكميه المطلوبه اكبر من المخزون ")
                 }else{
@@ -286,7 +286,7 @@ exports.cancelOrder = async (req, res) => {
             if (item.unit_type === "قطعة") {
                 product.totalUnits += item.quantity;
 
-                if (product.unit_type === "كرتونه") {
+                if (product.unit_type === "كرتونة") {
                     product.availableQuantity = Math.floor(
                         product.totalUnits / product.unitsPerPackage
                     );
@@ -294,7 +294,7 @@ exports.cancelOrder = async (req, res) => {
                     product.availableQuantity += item.quantity;
                 }
 
-            } else if (item.unit_type === "كرتونه") {
+            } else if (item.unit_type === "كرتونة") {
                 product.availableQuantity += item.quantity;
                 product.totalUnits += item.quantity * product.unitsPerPackage;
             }
