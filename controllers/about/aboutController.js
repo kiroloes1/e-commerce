@@ -4,12 +4,6 @@ const About =require(`${__dirname}/../../models/about`);
 // create about
 exports.createAbout = async (req, res) => {
   try {
-      const existabout = await About.findOne();
-    if(existabout){
-           return res.status(404).json({
-        message: "About  found",
-      });
-    }
     const about = await About.create(req.body);
 
     res.status(201).json({
@@ -92,5 +86,103 @@ exports.deleteAbout = async (req, res) => {
       message: "Error deleting about",
       error: error.message,
     });
+  }
+};
+
+// get WalletNumbers
+exports.getWalletNumbers = async (req, res) => {
+  try {
+    const about = await About.findOne().select("walletNumber");
+
+    if (!about) {
+      return res.status(404).json({ message: "About not found" });
+    }
+
+    res.json({
+      walletNumbers: about.walletNumber || []
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// addWalletNumber
+exports.addWalletNumber = async (req, res) => {
+  try {
+    const { number } = req.body;
+
+    if (!number) {
+      return res.status(400).json({ message: "Wallet number is required" });
+    }
+
+    const about = await About.findOneAndUpdate(
+      {},
+      {
+        $addToSet: { walletNumber: number } 
+      },
+      { new: true, runValidators: true }
+    );
+
+    res.json({
+      message: "Wallet number added",
+      walletNumbers: about.walletNumber
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// delete
+exports.deleteWalletNumber = async (req, res) => {
+  try {
+    const { number } = req.body;
+
+    const about = await About.findOneAndUpdate(
+      {},
+      {
+        $pull: { walletNumber: number }
+      },
+      { new: true }
+    );
+
+    res.json({
+      message: "Wallet number removed",
+      walletNumbers: about.walletNumber
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// update
+exports.updateWalletNumber = async (req, res) => {
+  try {
+    const { oldNumber, newNumber } = req.body;
+
+    const about = await About.findOne();
+
+    if (!about) {
+      return res.status(404).json({ message: "About not found" });
+    }
+
+    const index = about.walletNumber.findIndex(n => n === oldNumber);
+
+    if (index === -1) {
+      return res.status(404).json({ message: "Number not found" });
+    }
+
+    about.walletNumber[index] = newNumber;
+
+    await about.save();
+
+    res.json({
+      message: "Wallet number updated",
+      walletNumbers: about.walletNumber
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
