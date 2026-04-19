@@ -106,15 +106,12 @@ exports.updateCart = async (req, res) => {
       const product = await ProductModel.findById(item.product);
       if (!product) continue;
 
-      const maxStock =
-        item.unit_type === "قطعة"
-          ? product.totalUnits
-          : product.availableQuantity;
+
 
       newItems.push({
         product: item.product,
         unit_type: item.unit_type,
-        quantity: qty > maxStock ? maxStock : qty
+        quantity: qty 
       });
     }
 
