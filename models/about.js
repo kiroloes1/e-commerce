@@ -19,6 +19,11 @@ const aboutSchema = new mongoose.Schema(
       required: true,
     },
 
+    heroText:{
+      type: String,
+      required: true,
+    },
+
 
     socialMedia: {
       facebook: String,
