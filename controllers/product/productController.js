@@ -188,9 +188,8 @@ exports.getAllProductsClientsLimit = async (req, res) => {
     const {limit} =req.query || 10
   const products = await productModel
   .find({
-    totalUnits: { $gt: 0 },
-    purchasePrice: 0
-  })
+    totalUnits: { $gt: 0 }
+  } ,{purchasePrice: 0} )
   .limit(limit);
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
