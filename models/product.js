@@ -10,7 +10,7 @@ const productSchema = new mongoose.Schema({
     unit_type: { 
         type: String,
         required: true,
-        enum:["قطعة","كرتونه"]   
+         enum:["قطعة","كرتونة"]    
     }, 
 
     unitsPerPackage: { 
