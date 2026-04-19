@@ -4,15 +4,34 @@ const About =require(`${__dirname}/../../models/about`);
 // create about
 exports.createAbout = async (req, res) => {
   try {
+    const {storeName , about ,walletNumber ,heroText}=req.body;
+
+    if( !storeName || !about  || !walletNumber || !heroText){
+      return      res.status(400).json({
+      message: "يجب ملئ علي الاقل الحقول المهمه",
+    
+    });
+    } 
+    const existabout = await About.findOne();
+    if(existabout){
+     return      res.status(400).json({
+      message: "لا يمكن اضافه البيانات مره اخره اذهب للتعديل ",
+    
+    });
+    }
+
+    
     const about = await About.create(req.body);
 
+  
+
     res.status(201).json({
-      message: "About created successfully",
+      message: "تم اضافه المعلومات بنجاح  ",
       data: about,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error creating about",
+      message: "خطاء اثناء اضافه المعلومات",
       error: error.message,
     });
   }
@@ -51,12 +70,12 @@ exports.updateAbout = async (req, res) => {
 
     if (!about) {
       return res.status(404).json({
-        message: "About not found",
+        message: "لا توجد معلومات ",
       });
     }
 
     res.status(200).json({
-      message: "About updated successfully",
+      message: "تم التحديث بنجاح",
       data: about,
     });
   } catch (error) {
@@ -74,12 +93,12 @@ exports.deleteAbout = async (req, res) => {
 
     if (!about) {
       return res.status(404).json({
-        message: "About not found",
+        message: "المعلومات غبر موجوده",
       });
     }
 
     res.status(200).json({
-      message: "About deleted successfully",
+      message: "تم حذف المعلومات بنجاح",
     });
   } catch (error) {
     res.status(500).json({
@@ -95,7 +114,7 @@ exports.getWalletNumbers = async (req, res) => {
     const about = await About.findOne().select("walletNumber");
 
     if (!about) {
-      return res.status(404).json({ message: "About not found" });
+      return res.status(404).json({ message: "المعلومات غير موجوده" });
     }
 
     res.json({
@@ -112,7 +131,7 @@ exports.addWalletNumber = async (req, res) => {
     const { number } = req.body;
 
     if (!number) {
-      return res.status(400).json({ message: "Wallet number is required" });
+      return res.status(400).json({ message: "رقم المحفظه مطلوب " });
     }
 
     const about = await About.findOneAndUpdate(
@@ -124,7 +143,7 @@ exports.addWalletNumber = async (req, res) => {
     );
 
     res.json({
-      message: "Wallet number added",
+      message: "تم اضافه رقم المحفظه بنجاح",
       walletNumbers: about.walletNumber
     });
 
@@ -147,7 +166,7 @@ exports.deleteWalletNumber = async (req, res) => {
     );
 
     res.json({
-      message: "Wallet number removed",
+      message: "حذف رقم المحفظه بنجاح",
       walletNumbers: about.walletNumber
     });
 
@@ -164,13 +183,13 @@ exports.updateWalletNumber = async (req, res) => {
     const about = await About.findOne();
 
     if (!about) {
-      return res.status(404).json({ message: "About not found" });
+      return res.status(404).json({ message: "المعلومات غير موجوده" });
     }
 
     const index = about.walletNumber.findIndex(n => n === oldNumber);
 
     if (index === -1) {
-      return res.status(404).json({ message: "Number not found" });
+      return res.status(404).json({ message: "رقم المحفظه غير موجود" });
     }
 
     about.walletNumber[index] = newNumber;
@@ -178,7 +197,7 @@ exports.updateWalletNumber = async (req, res) => {
     await about.save();
 
     res.json({
-      message: "Wallet number updated",
+      message: "تم التحديث بنجاح",
       walletNumbers: about.walletNumber
     });
 
