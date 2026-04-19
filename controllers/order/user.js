@@ -68,11 +68,11 @@ exports.createOrder=async(req,res)=>{
         // reduce producr quantity + calc subtotal 
         for (const item of items){
                     if (!item.product || !item.quantity || !item.price) {
-            throw new Error("Invalid item data");
+            throw new Error("يجب ارسال بيانات الطلب مع الطلب");
         }
         
         if (isNaN(item.quantity) || isNaN(item.price)) {
-            throw new Error("Invalid numbers");
+            throw new Error("الارقام غير صحيحه ");
         }
             const productRef=await Product.findById(item.product).session(session);
             if (!productRef) {
