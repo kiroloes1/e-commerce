@@ -332,7 +332,7 @@ exports.cancelOrder = async (req, res) => {
 
         await order.save({ session });
 
-          await Order.deleteById(id).session(session)
+          await Order.findByIdAndDelete(id).session(session)
         await session.commitTransaction();
         session.endSession();
 
