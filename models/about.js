@@ -31,6 +31,12 @@ const aboutSchema = new mongoose.Schema(
       whatsapp: String,
     },
 
+    brands:[{
+      id:{type:Number},
+      name:{type:String},
+      desc:{type:String},
+    }]
+,
 
     phones: [
       {
