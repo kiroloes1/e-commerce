@@ -4,6 +4,12 @@ const About =require(`${__dirname}/../../models/about`);
 // create about
 exports.createAbout = async (req, res) => {
   try {
+      const existabout = await About.findOne();
+    if(existabout){
+           return res.status(404).json({
+        message: "About  found",
+      });
+    }
     const about = await About.create(req.body);
 
     res.status(201).json({
