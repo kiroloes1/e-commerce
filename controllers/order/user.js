@@ -67,7 +67,7 @@ exports.createOrder=async(req,res)=>{
 
 
              const cartExist=  await Cart.findOne(
-            { user: userId });
+            { user: userId }).session(session);;
 
 
 
@@ -91,7 +91,7 @@ exports.createOrder=async(req,res)=>{
                         { _id: cartExist._id },
                         {
                             $pull: {
-                            items: { product: item.product }
+                            items: { product:new mongoose.Types.ObjectId(item.product) }
                             }
                         },
                         { session }
@@ -111,15 +111,15 @@ exports.createOrder=async(req,res)=>{
 
             }else if(item.unit_type=="كرتونة"){
                    if(productRef.availableQuantity<item.quantity){
-                    await Cart.updateOne(
-                    { _id: cartExist._id },
-                    {
-                        $pull: {
-                        items: { product: item.product }
-                        }
-                    },
-                    { session }
-                    );
+                     await Cart.updateOne(
+                        { _id: cartExist._id },
+                        {
+                            $pull: {
+                            items: { product:new mongoose.Types.ObjectId(item.product) }
+                            }
+                        },
+                        { session }
+                        );
                      throw Error(" الكميه المطلوبه اكبر من المخزون ")
                 }else{
                     productRef.availableQuantity-=item.quantity;  
