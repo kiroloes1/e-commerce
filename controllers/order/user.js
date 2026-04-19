@@ -91,7 +91,7 @@ exports.createOrder=async(req,res)=>{
                         { _id: cartExist._id },
                         {
                             $pull: {
-                            items: { product: item._id }
+                            items: { product: item.product }
                             }
                         },
                         { session }
@@ -115,7 +115,7 @@ exports.createOrder=async(req,res)=>{
                     { _id: cartExist._id },
                     {
                         $pull: {
-                        items: { product: item._id }
+                        items: { product: item.product }
                         }
                     },
                     { session }
