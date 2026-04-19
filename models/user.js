@@ -18,6 +18,7 @@ const userSchema=new mongoose.Schema({
      },
      address:{
          city:String,
+         region:String,
          street:String,
          building:String,
          floor:String,
@@ -28,7 +29,7 @@ const userSchema=new mongoose.Schema({
       }],
      role:{
         type:String,
-        enum:['customer','admin','supplier'],
+        enum:['customer','admin'],
         default:'customer'
      },
      
