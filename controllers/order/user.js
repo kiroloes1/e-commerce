@@ -87,17 +87,13 @@ exports.createOrder=async(req,res)=>{
             if(item.unit_type=="قطعة"){
 
                 if(productRef.totalUnits<item.quantity){
-                    console.log("item.product:", item.product);
-        console.log("type:", typeof item.product);
-        console.log("cart items:", cartExist.items);
                      await Cart.updateOne(
                         { _id: cartExist._id },
                         {
                             $pull: {
                             items: { product:new mongoose.Types.ObjectId(item.product) }
                             }
-                        },
-                        { session }
+                        }
                         );
                      throw Error(" الكميه المطلوبه اكبر من المخزون ")
                 }else{
@@ -120,8 +116,7 @@ exports.createOrder=async(req,res)=>{
                             $pull: {
                             items: { product:new mongoose.Types.ObjectId(item.product) }
                             }
-                        },
-                        { session }
+                        }
                         );
                      throw Error(" الكميه المطلوبه اكبر من المخزون ")
                 }else{
