@@ -9,8 +9,8 @@ const upload = require(`${__dirname}/../config/multerConfig`);
 // const multer  =require('multer');
 // const strong=multer.memoryStorage();
 // const uploads=multer({strong:strong})
-router.get('/bestSeller', orderUser.bestSeller);
 
+router.get('/bestSeller', orderUser.bestSeller);
 router.use(authMiddleware.protected);
 
 // USER ROUTES
@@ -20,6 +20,7 @@ router.get('/my/:id', orderUser.viewMyOrder);
 router.patch('/cancel/:id', orderUser.cancelOrder);
 
 router.get('/viewMyOrdersDeliverd', orderUser.viewMyOrdersDeliverd);
+
 
 
 

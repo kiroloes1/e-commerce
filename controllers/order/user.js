@@ -335,7 +335,7 @@ exports.cancelOrder = async (req, res) => {
 
 exports.bestSeller = async (req, res) => {
   try {
-    const bestSellers = await Order.aggregate([
+    let bestSellers = await Order.aggregate([
       // 1. تفكيك items array
       { $unwind: "$items" },
 
@@ -380,6 +380,8 @@ exports.bestSeller = async (req, res) => {
         }
       }
     ]);
+
+  
 
     res.status(200).json({
       success: true,

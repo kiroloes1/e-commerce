@@ -78,6 +78,7 @@ const orderSchema = new mongoose.Schema({
 
     address: {
         city: { type: String, required: true },
+        region: { type: String, required: true },
         street: { type: String, required: true },
         building: String,
         floor: String,
