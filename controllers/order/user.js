@@ -65,6 +65,12 @@ exports.createOrder=async(req,res)=>{
           session=await mongoose.startSession();
         session.startTransaction();
 
+
+             const cartExist=  await Cart.findOne(
+            { user: userId });
+
+
+
         // reduce producr quantity + calc subtotal 
         for (const item of items){
                     if (!item.product || !item.quantity || !item.price) {
@@ -81,6 +87,15 @@ exports.createOrder=async(req,res)=>{
             if(item.unit_type=="قطعة"){
 
                 if(productRef.totalUnits<item.quantity){
+                     await Cart.updateOne(
+                        { _id: cartExist._id },
+                        {
+                            $pull: {
+                            items: { product: item._id }
+                            }
+                        },
+                        { session }
+                        );
                      throw Error(" الكميه المطلوبه اكبر من المخزون ")
                 }else{
                     productRef.totalUnits-=item.quantity;
@@ -96,6 +111,15 @@ exports.createOrder=async(req,res)=>{
 
             }else if(item.unit_type=="كرتونة"){
                    if(productRef.availableQuantity<item.quantity){
+                    await Cart.updateOne(
+                    { _id: cartExist._id },
+                    {
+                        $pull: {
+                        items: { product: item._id }
+                        }
+                    },
+                    { session }
+                    );
                      throw Error(" الكميه المطلوبه اكبر من المخزون ")
                 }else{
                     productRef.availableQuantity-=item.quantity;  
