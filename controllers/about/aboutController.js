@@ -21,13 +21,13 @@ exports.createAbout = async (req, res) => {
     }
 
     
-    const about = await About.create(req.body);
+    const abouts = await About.create(req.body);
 
   
 
     res.status(201).json({
       message: "تم اضافه المعلومات بنجاح  ",
-      data: about,
+      data: abouts,
     });
   } catch (error) {
     res.status(500).json({
