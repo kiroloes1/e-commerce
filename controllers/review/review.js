@@ -16,11 +16,13 @@ exports.createReview = async (req, res) => {
         });
 
         const order = await OrderModel.findOne({ user: userId, "items.product": productId ,status: "delivered" });
+        
         if (!order) {
             return res.status(400).json({
                 message: "لا يمكنك اضافه مراجعه لهذا المنتج لانك لم تشتريه"
             });
         }
+
 
         await review.save();
         return res.status(201).json({
@@ -125,6 +127,8 @@ exports.updateReview = async (req, res) => {
 };
 
 
+
+
 // best reviews 
 exports.getBestReviews = async (req, res) => {
     try {
@@ -138,8 +142,4 @@ exports.getBestReviews = async (req, res) => {
             error: err.message
         });
     }};
-
-
-
-
 
