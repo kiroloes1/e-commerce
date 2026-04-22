@@ -1,8 +1,10 @@
-const Order=require(`${__dirname}/../../models/order`);
+// const Order=require(`${__dirname}/../../models/order`);
+
 
 //view all orders
 exports.viewAllOrders = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
         const orders = await Order.find()
             .sort({ createdAt: -1 })
             .populate("user", "userName email phoneNumber address");
@@ -22,6 +24,7 @@ exports.viewAllOrders = async (req, res) => {
 // view order by id
 exports.viewOrderById = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
         const { id } = req.params;
 
         const order = await Order.findById(id)
@@ -45,6 +48,7 @@ exports.viewOrderById = async (req, res) => {
 //update status
 exports.updateStatus = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
         const { id } = req.params;
         const { status } = req.body;
 
@@ -88,6 +92,7 @@ exports.updateStatus = async (req, res) => {
 // approve payment
 exports.approvePayment = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
         const { id } = req.params;
 
         const order = await Order.findById(id);
@@ -118,6 +123,7 @@ exports.approvePayment = async (req, res) => {
 //reject payment
 exports.rejectPayment = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
         const { id } = req.params;
         const { reason } = req.body;
 
@@ -149,6 +155,7 @@ exports.rejectPayment = async (req, res) => {
 // add notes
 exports.addAdminNote = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
         const { id } = req.params;
         const { note } = req.body;
 

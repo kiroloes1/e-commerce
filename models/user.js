@@ -1,5 +1,8 @@
-const mongoose=require("mongoose");
 
+const mongoose = require("mongoose");
+
+
+module.exports = (conn) => {
 const userSchema=new mongoose.Schema({
     // personal information
      userName:{
@@ -29,7 +32,7 @@ const userSchema=new mongoose.Schema({
       }],
      role:{
         type:String,
-        enum:['customer','admin'],
+        enum:['customer','admin','supplier'],
         default:'customer'
      },
      
@@ -56,6 +59,5 @@ const userSchema=new mongoose.Schema({
 
 },{timestamps:true});
 
-const User=mongoose.model("User",userSchema);
-
-module.exports=User;
+  return conn.model("User", userSchema);
+};

@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 
-const aboutSchema = new mongoose.Schema(
-  {
+module.exports = (conn) => {
+
+  const aboutSchema = new mongoose.Schema({
 
     storeName: {
       type: String,
@@ -19,11 +20,10 @@ const aboutSchema = new mongoose.Schema(
       required: true,
     },
 
-    heroText:{
+    heroText: {
       type: String,
       required: true,
     },
-
 
     socialMedia: {
       facebook: String,
@@ -31,47 +31,28 @@ const aboutSchema = new mongoose.Schema(
       whatsapp: String,
     },
 
-    brands:[{
-      id:{type:Number},
-      name:{type:String},
-      desc:{type:String},
-    }]
-,
-
-    phones: [
+    brands: [
       {
-        type: String,
-      },
+        id: Number,
+        name: String,
+        desc: String,
+      }
     ],
 
+    phones: [String],
 
-    address: {
-      type: String,
-    },
+    address: String,
 
+    email: String,
 
-    email: {
-      type: String,
-    },
+    workingHours: String,
 
-  
-    workingHours: {
+    walletNumber: [{
       type: String,
-    },
-  walletNumber:[{
-      type: String,
-       unique: true,
       match: [/^(010|011|012|015)[0-9]{8}$/, 'Invalid Egyptian phone number']
-  }],
-  },
+    }]
 
+  }, { timestamps: true });
 
-
-  {
-    timestamps: true,
-  }
-);
-
-const about = mongoose.model("About", aboutSchema);
-module.exports = about;
-
+  return conn.model("About", aboutSchema);
+};

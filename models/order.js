@@ -1,5 +1,8 @@
+
 const mongoose = require("mongoose");
 
+
+module.exports = (conn) => {
 const orderItemSchema = new mongoose.Schema({
     product: { 
         type: mongoose.Schema.Types.ObjectId, 
@@ -158,6 +161,5 @@ orderSchema.pre("validate", function (next) {
  
 });
 
-
-const Order = mongoose.model("Order", orderSchema);
-module.exports = Order;
+  return conn.model("Order", orderSchema);
+};

@@ -1,0 +1,119 @@
+//  const CartModel = req.app.locals.models.Cart;
+
+// get cart by user must be login first
+exports.createReview = async (req, res) => {
+       try{
+        const ReviewModel = req.app.locals.models.Review;
+        const {userId}=req.user;
+        const {productId,rating,comment}=req.body;
+        const review = new ReviewModel({
+            userId,
+            productId,
+            rating, 
+            comment
+        });
+        await review.save();
+        return res.status(201).json({
+            message: "تم اضافه المراجعه بنجاح",
+            data: review
+        });
+
+
+       }catch(err){
+        return res.status(500).json({
+            message: "Server error",
+            error: err.message
+        });
+       }
+};
+
+// get reviews for a product
+exports.getReviewsByProduct = async (req, res) => {
+    try {
+        const ReviewModel = req.app.locals.models.Review;
+        const { productId } = req.params;
+        const reviews = await ReviewModel.find({ productId }).populate('userId', 'name');
+        return res.status(200).json({
+            data: reviews
+        });
+    } catch (err) {
+        return res.status(500).json({
+            message: "Server error",
+            error: err.message 
+        });
+    }
+};
+
+// get reviews by user
+exports.getReviewsByUser = async (req, res) => {
+    try {
+        const ReviewModel = req.app.locals.models.Review;
+        const { userId } = req.user;
+        const reviews = await ReviewModel.find({ userId }).populate('productId', 'name');
+        return res.status(200).json({
+            data: reviews
+        });
+    } catch (err) {
+        return res.status(500).json({
+            message: "Server error",
+            error: err.message
+        });
+    }
+};
+
+// delete review
+exports.deleteReview = async (req, res) => {
+  try {
+    const ReviewModel = req.app.locals.models.Review;
+    const { reviewId } = req.params;
+    const { userId } = req.user;
+    const review = await ReviewModel.findOneAndDelete({ _id: reviewId, userId });
+        if (!review) {
+            return res.status(404).json({
+                message: "المراجعه غير موجوده او ليس لديك صلاحيات الحذف"
+            });
+        }
+        return res.status(200).json({
+            message: "تم حذف المراجعه بنجاح"
+        });
+    } catch (err) {
+        return res.status(500).json({
+            message: "Server error",
+            error: err.message
+        });
+    }
+};
+
+// update review
+exports.updateReview = async (req, res) => {
+    try {
+        const ReviewModel = req.app.locals.models.Review;
+        const { reviewId } = req.params;
+        const { userId } = req.user;
+        const { rating, comment } = req.body;
+        const review = await ReviewModel.findOneAndUpdate(
+            { _id: reviewId, userId },
+            { rating, comment },
+            { new: true, runValidators: true }
+        );
+
+        if (!review) {
+            return res.status(404).json({
+                message: "المراجعه غير موجوده او ليس لديك صلاحيات التعديل"
+            });
+        }
+        return res.status(200).json({
+            message: "تم تحديث المراجعه بنجاح",
+            data: review
+        });
+    } catch (err) {
+        return res.status(500).json({
+            message: "Server error",
+            error: err.message
+        });
+    }
+};
+
+
+
+

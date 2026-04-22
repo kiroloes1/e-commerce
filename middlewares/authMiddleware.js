@@ -1,6 +1,7 @@
 const jwt=require('jsonwebtoken');
-const User=require(`${__dirname}/../models/user`);
+
 exports.protected=async(req,res,next)=>{
+        const User = req.app.locals.models.User;
     const authHeader=req.headers.authorization;;
     if(!authHeader || !authHeader.startsWith('Bearer')){
         return res.status(401).json({message:"No token provided , you must be logged in"});

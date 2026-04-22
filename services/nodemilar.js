@@ -11,7 +11,7 @@ export const SendEmail = async ({ to, subject, html }) => {
         });
 
         const info = await transport.sendMail({
-            from: `امتجر ابو الدهب للمنتجات الغذائية`,
+            from: `SARAHAAPP <${process.env.USER}>`,
             to,
             subject,
             html

@@ -1,6 +1,8 @@
-const Order=require(`${__dirname}/../../models/order`);
-const Product=require(`${__dirname}/../../models/product`);
-const Cart=require(`${__dirname}/../../models/cart`);
+// const Order=require(`${__dirname}/../../models/order`);
+// const Product=require(`${__dirname}/../../models/product`);
+// const Cart=require(`${__dirname}/../../models/cart`);
+
+
 
 // cloudinary
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`);
@@ -10,6 +12,9 @@ const mongoose=require('mongoose');
 exports.createOrder=async(req,res)=>{
     let  session;
     try{
+        const Order = req.app.locals.models.Order;
+const Product = req.app.locals.models.Product;
+const Cart = req.app.locals.models.Cart;
         const {userId}=req.user;
         console.log(req.file)
         // remember that , items are objects and address is a object
@@ -212,6 +217,9 @@ exports.createOrder=async(req,res)=>{
 // View my orders
 exports.viewMyOrders = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
+const Product = req.app.locals.models.Product;
+const Cart = req.app.locals.models.Cart;
         const { userId } = req.user;
 
         const orders = await Order.find({ user: userId }).populate("items.product" ,"image.url")
@@ -232,6 +240,9 @@ exports.viewMyOrders = async (req, res) => {
 // my confirm order
 exports.viewMyOrdersDeliverd = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
+const Product = req.app.locals.models.Product;
+const Cart = req.app.locals.models.Cart;
         const { userId } = req.user;
 
         const orders = await Order.find({ user: userId , status:"delivered"}).populate("items.product" ,"image.url")
@@ -253,6 +264,9 @@ exports.viewMyOrdersDeliverd = async (req, res) => {
 // view order by id
 exports.viewMyOrder = async (req, res) => {
     try {
+        const Order = req.app.locals.models.Order;
+const Product = req.app.locals.models.Product;
+const Cart = req.app.locals.models.Cart;
         const { userId } = req.user;
         const { id } = req.params;
 
@@ -283,6 +297,9 @@ exports.viewMyOrder = async (req, res) => {
 exports.cancelOrder = async (req, res) => {
     let session;
     try {
+        const Order = req.app.locals.models.Order;
+const Product = req.app.locals.models.Product;
+const Cart = req.app.locals.models.Cart;
         const { userId } = req.user;
         const { id } = req.params;
 
@@ -332,7 +349,8 @@ exports.cancelOrder = async (req, res) => {
 
         await order.save({ session });
 
-          await Order.findByIdAndDelete(id).session(session)
+        await Order.deleteById(id).session(session)
+
         await session.commitTransaction();
         session.endSession();
 
@@ -358,6 +376,9 @@ exports.cancelOrder = async (req, res) => {
 
 exports.bestSeller = async (req, res) => {
   try {
+    const Order = req.app.locals.models.Order;
+const Product = req.app.locals.models.Product;
+const Cart = req.app.locals.models.Cart;
     let bestSellers = await Order.aggregate([
       // 1. تفكيك items array
       { $unwind: "$items" },
