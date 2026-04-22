@@ -1,10 +1,9 @@
-// const About =require(`${__dirname}/../../models/about`);
+const About =require(`${__dirname}/../../models/about`);
 
 
 // create about
 exports.createAbout = async (req, res) => {
   try {
-    const About = req.app.locals.models.About;
     const {storeName , about ,walletNumber ,heroText}=req.body;
 
     if( !storeName || !about  || !walletNumber || !heroText){
@@ -41,7 +40,6 @@ exports.createAbout = async (req, res) => {
 // get about 
 exports.getAbout = async (req, res) => {
   try {
-    const About = req.app.locals.models.About;
     const about = await About.find();
 
     if (!about) {
@@ -64,7 +62,6 @@ exports.getAbout = async (req, res) => {
 // update about 
 exports.updateAbout = async (req, res) => {
   try {
-    const About = req.app.locals.models.About;
     const about = await About.findOneAndUpdate(
       {},
       req.body,
@@ -92,7 +89,6 @@ exports.updateAbout = async (req, res) => {
 // delete about
 exports.deleteAbout = async (req, res) => {
   try {
-    const About = req.app.locals.models.About;
     const about = await About.findOneAndDelete();
 
     if (!about) {
@@ -115,7 +111,6 @@ exports.deleteAbout = async (req, res) => {
 // get WalletNumbers
 exports.getWalletNumbers = async (req, res) => {
   try {
-    const About = req.app.locals.models.About;
     const about = await About.findOne().select("walletNumber");
 
     if (!about) {
@@ -133,7 +128,6 @@ exports.getWalletNumbers = async (req, res) => {
 // addWalletNumber
 exports.addWalletNumber = async (req, res) => {
   try {
-    const About = req.app.locals.models.About;
     const { number } = req.body;
 
     if (!number) {
@@ -161,7 +155,6 @@ exports.addWalletNumber = async (req, res) => {
 // delete
 exports.deleteWalletNumber = async (req, res) => {
   try {
-    const About = req.app.locals.models.About;
     const { number } = req.body;
 
     const about = await About.findOneAndUpdate(
@@ -185,7 +178,6 @@ exports.deleteWalletNumber = async (req, res) => {
 // update
 exports.updateWalletNumber = async (req, res) => {
   try {
-    const About = req.app.locals.models.About;
     const { oldNumber, newNumber } = req.body;
 
     const about = await About.findOne();

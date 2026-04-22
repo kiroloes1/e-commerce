@@ -1,15 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-// const User = require(`${__dirname}/../../models/user`);
+const User = require(`${__dirname}/../../models/user`);
 const { Resend } = require('resend');
 const  { SendEmail } =require(`${__dirname}/../../services/nodemilar`);
-
 
 
 // login 
 exports.login = async (req, res) => {
   try {
-    const User = req.app.locals.models.User;
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -51,8 +49,6 @@ exports.login = async (req, res) => {
 // signUp 
 exports.signUp = async (req, res) => {
   try {
-    const User = req.app.locals.models.User;
-    console.log(User)
     const {userName, email, password , address ,phoneNumber } = req.body;
     if (!userName || !email || !password) {
       return res.status(400).json({ message: "الرجاء توفير جميع الحقول المطلوبة" });
@@ -87,7 +83,6 @@ exports.updatePassword = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    const User = req.app.locals.models.User;
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: "الرجاء توفير جميع الحقول المطلوبة" });
     }
@@ -120,7 +115,6 @@ exports.forgetPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const User = req.app.locals.models.User;
     if (!email) {
       return res.status(400).json({ message: "الرجاء إدخال بريدك الإلكتروني" });
     }
@@ -169,7 +163,6 @@ exports.resetPassword = async (req, res) => {
   const { email, resetCode, newPassword } = req.body;
 
   try {
-    const User = req.app.locals.models.User;
     if (!email || !resetCode || !newPassword) {
       return res.status(400).json({ message: "الرجاء توفير جميع الحقول المطلوبة" });
     }

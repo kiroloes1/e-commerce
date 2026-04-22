@@ -1,11 +1,9 @@
-// const UserModel = require(`${__dirname}/../../models/user`);
-
+const UserModel = require(`${__dirname}/../../models/user`);
 
 
 // update user
 exports.updateUser = async (req, res) => {
   try {
-    const UserModel = req.app.locals.models.User;
     const { customerId } = req.params;
     const { userName, email, address, phoneNumber } = req.body;
 
@@ -49,7 +47,6 @@ exports.updateUser = async (req, res) => {
 // delete user
 exports.deleteUser = async (req, res) => {
   try {
-    const UserModel = req.app.locals.models.User;
     const { customerId } = req.params;
 
     const user = await UserModel.findByIdAndDelete(customerId);
@@ -74,7 +71,6 @@ exports.deleteUser = async (req, res) => {
 // get user by id
 exports.getUser = async (req, res) => {
   try {
-    const UserModel = req.app.locals.models.User;
     const { customerId } = req.params;
 
     const user = await UserModel.findById(customerId, "-password");
@@ -99,7 +95,6 @@ exports.getUser = async (req, res) => {
 // get profile
 exports.getProfile = async (req, res) => {
   try {
-    const UserModel = req.app.locals.models.User;
     const { userId } = req.user;
 
     const user = await UserModel.findById(userId, "-password");
@@ -124,7 +119,6 @@ exports.getProfile = async (req, res) => {
 // get all users
 exports.getUsers = async (req, res) => {
   try {
-    const UserModel = req.app.locals.models.User;
     const users = await UserModel.find({}, "-password");
 
     res.status(200).json({
@@ -143,7 +137,6 @@ exports.getUsers = async (req, res) => {
 // update profile
 exports.updateProfile=async(req,res)=>{
   try{
-    const UserModel = req.app.locals.models.User;
             const { userId } = req.user;
         if(!userId){
             return res.status(403).json({message:"من فضلك سجل الدخول اولا !"})

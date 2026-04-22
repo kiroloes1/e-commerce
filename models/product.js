@@ -1,7 +1,5 @@
-
 const mongoose = require("mongoose");
 
-module.exports = (conn) => {
 const productSchema = new mongoose.Schema({
     code: { type: String, required: true, unique: true },   // Unique product ID
     productName: { type: String, required: true },          // Product name
@@ -12,7 +10,7 @@ const productSchema = new mongoose.Schema({
     unit_type: { 
         type: String,
         required: true,
-        enum:["قطعة","كرتونة"]   
+         enum:["قطعة","كرتونة"]    
     }, 
 
     unitsPerPackage: { 
@@ -72,6 +70,5 @@ productSchema.pre('save', function(next) {
     
 });
 
-const Product = conn.model("Product", productSchema);
-return Product;
-};  
+const Product = mongoose.model("Product", productSchema);
+module.exports = Product;

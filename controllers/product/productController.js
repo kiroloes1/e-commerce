@@ -1,6 +1,4 @@
-// const productModel=require(`${__dirname}/../../models/product`);
-
-
+const productModel=require(`${__dirname}/../../models/product`);
 const XLSX = require("xlsx");
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`)
 const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
@@ -36,7 +34,6 @@ exports.createProduct = async (req, res) => {
     }
 
     try {
-      const productModel = req.app.locals.models.Product;
         // ✅ Check if product code already exists
         const existingProduct = await productModel.findOne({ code });
         if (existingProduct) {
@@ -76,7 +73,6 @@ exports.createProduct = async (req, res) => {
 // create from excel sheet
 exports.createFromExcel = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
@@ -161,7 +157,6 @@ exports.createFromExcel = async (req, res) => {
 // GET all products admin
 exports.getAllProducts = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const products = await productModel.find();
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
@@ -176,7 +171,6 @@ exports.getAllProducts = async (req, res) => {
 //   GET all products clients
 exports.getAllProductsClients = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const products = await productModel.find({},{purchasePrice:0});
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
@@ -191,9 +185,12 @@ exports.getAllProductsClients = async (req, res) => {
 // get product by limit  to clients
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const {limit} =req.query || 10
-    const products = await productModel.find({},{purchasePrice:0}).limit(limit);
+  const products = await productModel
+  .find({
+    totalUnits: { $gt: 0 }
+  } ,{purchasePrice: 0} )
+  .limit(limit);
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
       data: products,
@@ -207,7 +204,6 @@ exports.getAllProductsClientsLimit = async (req, res) => {
 // filter to  product based on category
 exports.filterProductBasedOnCategory=async(req,res)=>{
     try{
-      const productModel = req.app.locals.models.Product;
       const categories = await productModel.distinct("category");
         return res.status(200).json({
       message: "تم جلب جميع الاصناف بنجاح",
@@ -226,7 +222,6 @@ exports.filterProductBasedOnCategory=async(req,res)=>{
 
 exports.getProductsByCategory = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const { category } = req.query;
     let limit = parseInt(req.query.limit) || 8;
 
@@ -266,7 +261,6 @@ exports.getProductsByCategory = async (req, res) => {
 // GET product by ID
 exports.getProductById = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const { id } = req.params;
     const product = await productModel.findById(id,{purchasePrice:0});
     if (!product) {
@@ -285,7 +279,6 @@ exports.getProductById = async (req, res) => {
 // DELETE product
 exports.deleteProduct = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const { productId } = req.params;
     if (!productId) {
       return res.status(400).json({ message: "من فضلك اختر المنتج أولاً" });
@@ -320,7 +313,6 @@ exports.deleteProduct = async (req, res) => {
 
 exports.search = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const limit = parseInt(req.query.limit) || 20;
     const { category, search } = req.query;
 
@@ -364,7 +356,6 @@ exports.search = async (req, res) => {
 // suggestion 
 exports.suggestion = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const { category } = req.query;
 
     let filter = {};
@@ -396,7 +387,6 @@ exports.suggestion = async (req, res) => {
 // UPDATE product
 exports.updateProduct = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const { productId } = req.params;
     if (!productId) {
       return res.status(400).json({ message: "من فضلك اختر المنتج أولاً" });
@@ -459,7 +449,6 @@ exports.updateProduct = async (req, res) => {
 // upload image to product
 exports.uploadImageToProduct = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const file = req.file;
     const folderBase = 'productImage';
     const { productId } = req.params;
@@ -505,7 +494,6 @@ exports.uploadImageToProduct = async (req, res) => {
 // DELETE image from product
 exports.deleteImageToProduct = async (req, res) => {
   try {
-    const productModel = req.app.locals.models.Product;
     const { productId } = req.params;
     if (!productId) {
       return res.status(400).json({ message: "من فضلك اختر المنتج أولاً" });

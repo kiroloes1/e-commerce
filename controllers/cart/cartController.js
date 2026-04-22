@@ -1,14 +1,8 @@
-// const CartModel=require(`${__dirname}/../../models/cart`);
-// const ProductModel = require(`${__dirname}/../../models/product`);
-
-
-
-
+const CartModel=require(`${__dirname}/../../models/cart`);
+const ProductModel = require(`${__dirname}/../../models/product`);
 // get cart by user must be login first
 exports.getCartByUser = async (req, res) => {
     try {
-      const CartModel = req.app.locals.models.Cart;
-const ProductModel = req.app.locals.models.Product;
         const { userId } = req.user;
 
     const cart = await CartModel.findOne({ user: userId })
@@ -26,8 +20,6 @@ const ProductModel = req.app.locals.models.Product;
 // create 
 exports.addToCart = async (req, res) => {
   try {
-    const CartModel = req.app.locals.models.Cart;
-const ProductModel = req.app.locals.models.Product;
     const { userId } = req.user;
     const { items } = req.body;
 
@@ -94,8 +86,6 @@ const ProductModel = req.app.locals.models.Product;
 // update
 exports.updateCart = async (req, res) => {
   try {
-    const CartModel = req.app.locals.models.Cart;
-const ProductModel = req.app.locals.models.Product;
     const { userId } = req.user;
     const { items } = req.body;
 
@@ -141,12 +131,9 @@ const ProductModel = req.app.locals.models.Product;
     });
   }
 };
-
 // delete cart by user must be login first
 exports.deleteCartByUser = async (req, res) => {
     try {
-      const CartModel = req.app.locals.models.Cart;
-const ProductModel = req.app.locals.models.Product;
         const { userId } = req.user;
 
         const cart = await CartModel.findOneAndDelete({ user: userId });
