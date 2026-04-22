@@ -90,6 +90,56 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.phoneLogin = async (req, res) => {
+  try {
+    const { phone, password } = req.body;
+
+    if (!phone || !password) {
+      return res.status(400).json({
+        message: "الرجاء إدخال رقم الهاتف وكلمة المرور",
+      });
+    }
+
+    const user = await User.findOne({ phone }).select("+password");
+
+    if (!user) {
+      return res.status(401).json({
+        message: "رقم الهاتف أو كلمة المرور غير صحيحة",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: "رقم الهاتف أو كلمة المرور غير صحيحة",
+      });
+    }
+
+    const accessToken = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.ACCESS_JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    return res.status(200).json({
+      message: `تم تسجيل دخول ${user.name} بنجاح`,
+      accessToken,
+      userName: user.userName,
+    });
+
+  } catch (err) {
+    console.error("خطأ في تسجيل الدخول:", err);
+    return res.status(500).json({
+      message: "خطأ داخلي في الخادم",
+      error: err.message,
+    });
+  }
+};
+
 // signUp 
 exports.signUp = async (req, res) => {
   try {

@@ -8,8 +8,8 @@ const userController=require(`${__dirname}/../controllers/user/userController`)
 router.post('/login', adminControllers.login);
 
 
-// login  by facebook route
-router.post('/facebookAuth', adminControllers.facebookAuth);
+// login  by phone route
+router.post('/phoneLogin', adminControllers.facebookAuth);
 
 
 // login route
