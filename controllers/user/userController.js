@@ -147,13 +147,11 @@ exports.updateProfile=async(req,res)=>{
     if (userName) update.userName = userName;
     if (email) update.email = email;
     if (address) update.address = address;
+    if (phoneNumber) update.phoneNumber = phoneNumber;
 
     const query = { $set: update };
 
-   
-    if (phoneNumber) {
-      query.$push = { phoneNumber };
-    }
+
 
     const user = await UserModel.findByIdAndUpdate(
       userId,
