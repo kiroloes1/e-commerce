@@ -23,7 +23,7 @@ exports.createNotification = async (userId, title, message, type = "system") => 
 
 exports.getUserNotifications = async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user.userId;
 
     if (!userId) {
       return res.status(401).json({
