@@ -100,7 +100,7 @@ exports.phoneLogin = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ phone:phoneNumber }).select("+password");
+    const user = await User.findOne({ phoneNumber:phone }).select("+password");
 
     if (!user) {
       return res.status(401).json({
