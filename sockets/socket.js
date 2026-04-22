@@ -3,11 +3,18 @@ let io;
 function init(server) {
   const socketIO = require("socket.io");
 
+  // io = socketIO(server, {
+  //   cors: {
+  //     origin: "*"
+  //   }
+  // });
   io = socketIO(server, {
-    cors: {
-      origin: "*"
-    }
-  });
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  },
+  transports: ["websocket", "polling"]
+});
 
 io.on("connection", (socket) => {
 
