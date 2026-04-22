@@ -6,7 +6,7 @@ exports.sendToAllUsers = (req, res) => {
 
   const io = getIO();
 
-  io.emit("admin_message", {
+  io.emit("notification", {
         title: title || "الادمن يرحب بك",
         message: message || "هذه رسالة من الادمن لجميع المستخدمين",
   });
