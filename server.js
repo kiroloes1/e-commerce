@@ -11,6 +11,11 @@ app.use(cors({
   origin: true,
   credentials: true
 }));
+
+
+const server =require("http").createServer(app);
+const { init } = require(`${__dirname}/sockets/socket`);
+init(server);
 const config=require(`${__dirname}/config/configDB`);
 const userRoute=require(`${__dirname}/routes/user`);
 const productRoute=require(`${__dirname}/routes/product`)
@@ -18,6 +23,10 @@ const cartRoute=require(`${__dirname}/routes/cart`);
 const orderRoute=require(`${__dirname}/routes/order`);
 const aboutRoute =require(`${__dirname}/routes/about`);
 const reviewRoute =require(`${__dirname}/routes/review`);
+const adminRoute =require(`${__dirname}/routes/admin`);
+
+require(`${__dirname}/jobs/cleanNotifications`);
+
 config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority");
 
 
@@ -34,9 +43,10 @@ app.use('/v1/user/cart',cartRoute);
 app.use('/v1/order',orderRoute);
 app.use('/v1/about',aboutRoute);
 app.use('/v1/review',reviewRoute);
+app.use('/v1/admin',adminRoute);
 
 
 const PORT=process.env.PORT || 5000;
-app.listen(PORT,()=>{
+server.listen(PORT,()=>{
     console.log(`Server is running on port ${PORT}`);
 })

@@ -5,6 +5,8 @@ const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
 const fs = require('fs');
 const ReviewModel = require(`${__dirname}/../../models/review`);
 const mongoose = require("mongoose");
+const { getIO } = require(`${__dirname}/../../sockets/socket`);
+const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
 
 
 const basePipeline = [
@@ -87,6 +89,19 @@ exports.createProduct = async (req, res) => {
 
         // ✅ totalUnits and status will be calculated in pre-save hook
         await newProduct.save();
+
+
+        await createNotification(
+         "منتج جديد" ,
+         "تم إضافة منتج جديد في المتجر " + newProduct.productName,
+        )
+        // const io = getIO();
+        // io.emit("new_product", {
+        //   title: "منتج جديد" ,
+        //   message: "تم إضافة منتج جديد في المتجر " + newProduct.productName,
+        //   productId: product._id
+        // });
+
 
         return res.status(201).json({
             message: "تم اضافه المنتج بنجاح",
@@ -571,6 +586,7 @@ exports.updateProduct = async (req, res) => {
     if (!updatedProduct) {
       return res.status(404).json({ message: "هذا المنتج غير موجود" });
     }
+
 
     res.status(200).json({
       message: "تم تحديث المنتج بنجاح",

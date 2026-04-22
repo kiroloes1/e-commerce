@@ -1,4 +1,6 @@
 const Order=require(`${__dirname}/../../models/order`);
+const { getIO } = require(`${__dirname}/../../sockets/socket`);
+const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
 
 //view all orders
 exports.viewAllOrders = async (req, res) => {
@@ -65,13 +67,29 @@ exports.updateStatus = async (req, res) => {
         }
 
         order.status = status;
+        let s="قيد التنفيذ";
+        if (status === "confirmed"){ order.confirmedAt = new Date(); s="تم تأكيد الطلب";}
+        if (status === "shipped") {order.shippedAt = new Date();     s="تم شحن الطلب";}
+        if (status === "delivered"){ order.deliveredAt = new Date(); s="تم توصيل الطلب";}
+        if (status === "cancelled") {order.cancelledAt = new Date(); s= "  تم الغاء الطلب من قبل المسئول";}
 
-        if (status === "confirmed") order.confirmedAt = new Date();
-        if (status === "shipped") order.shippedAt = new Date();
-        if (status === "delivered") order.deliveredAt = new Date();
-        if (status === "cancelled") order.cancelledAt = new Date();
 
         await order.save();
+
+     
+        //    const io = getIO(); 
+        //      io.to(order.user.toString()).emit("order_status", {
+        //     title: s,
+        //     message: "حالة طلبك رقم " + order._id + " تم تحديثها إلى " + s,
+        //     orderId: order._id
+        // });
+
+        await createNotification(
+            order.user.toString(),
+           s,
+           "حالة طلبك رقم " + order._id + " تم تحديثها إلى " + s,
+        )
+        
 
         res.status(200).json({
             message: "Status updated",
@@ -133,6 +151,13 @@ exports.rejectPayment = async (req, res) => {
         order.rejectionReason = reason || "No reason provided";
 
         await order.save();
+
+                await createNotification(
+            order.user.toString(),
+              "تم رفض الدفع",
+            //   message
+            "تم رفص الطلب الخاص بك والسبب" +rejectionReason
+        )
 
         res.status(200).json({
             message: "Payment rejected",
