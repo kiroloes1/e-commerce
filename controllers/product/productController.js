@@ -99,7 +99,8 @@ exports.createProduct = async (req, res) => {
         io.emit("notification", {
           title: "منتج جديد" ,
           message: "تم إضافة منتج جديد في المتجر " + newProduct.productName,
-          productId: newProduct._id
+          productId: newProduct._id,
+          createdAt:new Date(),
         });
 
 
