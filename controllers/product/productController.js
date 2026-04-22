@@ -372,39 +372,121 @@ exports.search = async (req, res) => {
     const { category, search } = req.query;
 
     if (!search) {
-      return res.status(400).json({ message: "من فضلك ادخل كلمات للبحث عنها" });
+      return res.status(400).json({
+        message: "من فضلك ادخل كلمات للبحث عنها"
+      });
     }
 
-    let query = {
-      ...(category && { category }),
-      $text: { $search: search }
-    };
+    let pipeline = [];
 
-    let products = await productModel
-      .find(query, { score: { $meta: "textScore" }, purchasePrice: 0 })
-      .sort({ score: { $meta: "textScore" } })
-      .limit(limit)
-      .lean();
-
-    if (!products.length) {
-      const fallbackQuery = {
+    // 1. TEXT SEARCH
+    pipeline.push({
+      $match: {
         ...(category && { category }),
-        $or: [
-          { productName: { $regex: search, $options: "i" } },
-          { description: { $regex: search, $options: "i" } }
-        ]
-      };
+        $text: { $search: search }
+      }
+    });
 
-      products = await productModel.find(fallbackQuery).limit(limit).lean();
+    // 2. ADD SCORE
+    pipeline.push({
+      $addFields: {
+        score: { $meta: "textScore" }
+      }
+    });
+
+    // 3. SORT BY RELEVANCE
+    pipeline.push({
+      $sort: {
+        score: -1
+      }
+    });
+
+    // 4. JOIN REVIEWS
+    pipeline.push(
+      {
+        $lookup: {
+          from: "reviews",
+          localField: "_id",
+          foreignField: "productId",
+          as: "reviews"
+        }
+      },
+      {
+        $addFields: {
+          averageRating: {
+            $ifNull: [{ $avg: "$reviews.rating" }, 0]
+          },
+          reviewsCount: {
+            $size: "$reviews"
+          }
+        }
+      }
+    );
+
+    // 5. HIDE FIELDS
+    pipeline.push({
+      $project: {
+        purchasePrice: 0
+      }
+    });
+
+    // 6. LIMIT
+    pipeline.push({
+      $limit: limit
+    });
+
+    let products = await productModel.aggregate(pipeline);
+
+    // 🔁 fallback (regex search)
+    if (!products.length) {
+      products = await productModel.aggregate([
+        {
+          $match: {
+            ...(category && { category }),
+            $or: [
+              { productName: { $regex: search, $options: "i" } },
+              { description: { $regex: search, $options: "i" } }
+            ]
+          }
+        },
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "productId",
+            as: "reviews"
+          }
+        },
+        {
+          $addFields: {
+            averageRating: {
+              $ifNull: [{ $avg: "$reviews.rating" }, 0]
+            },
+            reviewsCount: {
+              $size: "$reviews"
+            }
+          }
+        },
+        {
+          $project: {
+            purchasePrice: 0
+          }
+        },
+        {
+          $limit: limit
+        }
+      ]);
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: `تم العثور على ${products.length} منتج(ات)`,
       data: products
     });
 
   } catch (err) {
-    res.status(500).json({ message: "حدث خطأ أثناء البحث: " + err.message });
+    return res.status(500).json({
+      message: "حدث خطأ أثناء البحث: " + err.message
+    });
   }
 };
 
