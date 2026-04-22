@@ -3,7 +3,6 @@ const XLSX = require("xlsx");
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`)
 const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
 const fs = require('fs');
-const ReviewModel = require(`${__dirname}/../../models/review`);
 // create product
 exports.createProduct = async (req, res) => {
     const {
@@ -159,20 +158,10 @@ exports.createFromExcel = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await productModel.find();
-    const productsWithRatings = await Promise.all(products.map(async (product) => {
-      const reviews = await ReviewModel.find({ productId: product._id });
-      const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
-      return {
-        ...product.toObject(),
-        rating: averageRating
-      };
-    }));
-    
-    
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
-      data: productsWithRatings,
-      length: productsWithRatings.length
+      data: products,
+      length:products.length
     });
   } catch (err) {
     return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات: " + err.message });
@@ -183,18 +172,9 @@ exports.getAllProducts = async (req, res) => {
 exports.getAllProductsClients = async (req, res) => {
   try {
     const products = await productModel.find({},{purchasePrice:0});
-    const productsWithRatings = await Promise.all(products.map(async (product) => {
-      const reviews = await ReviewModel.find({ productId: product._id });
-      const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
-      return {
-        ...product.toObject(),
-        rating: averageRating
-      };
-    }));
-
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
-      data: productsWithRatings,
+      data: products,
       length:products.length
     });
   } catch (err) {
@@ -211,20 +191,9 @@ exports.getAllProductsClientsLimit = async (req, res) => {
     totalUnits: { $gt: 0 }
   } ,{purchasePrice: 0} )
   .limit(limit);
-
-     const productsWithRatings = await Promise.all(products.map(async (product) => {
-      const reviews = await ReviewModel.find({ productId: product._id });
-      const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;  
-      return {
-        ...product.toObject(),
-        rating: averageRating
-
-      };
-    }));
-
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
-      data: productsWithRatings,
+      data: products,
       length:products.length
     });
   } catch (err) {
@@ -277,19 +246,9 @@ exports.getProductsByCategory = async (req, res) => {
       }
     }
 
-      const productsWithRatings = await Promise.all(products.map(async (product) => {
-      const reviews = await ReviewModel.find({ productId: product._id });
-      const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
-      return {
-        ...product.toObject(),
-        rating: averageRating
-      };
-    }));
-
-
     return res.status(200).json({
       message: "تم جلب جميع الاصناف بنجاح",
-      data: productsWithRatings,
+      data: products,
       length: products.length
     });
 
@@ -307,16 +266,9 @@ exports.getProductById = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "المنتج غير موجود" });
     }
-      const reviews = await ReviewModel.find({ productId: product._id });
-      const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
-      const productWithRating = {
-        ...product.toObject(),
-        rating: averageRating
-      };
-
     return res.status(200).json({
       message: "تم جلب المنتج بنجاح",
-      data: productWithRating
+      data: product
     });
   } catch (err) {
     return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتج: " + err.message });
@@ -391,20 +343,9 @@ exports.search = async (req, res) => {
       products = await productModel.find(fallbackQuery).limit(limit).lean();
     }
 
-      const productsWithRatings = await Promise.all(products.map(async (product) => {
-      const reviews = await ReviewModel.find({ productId: product._id });
-      const averageRating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
-      return {
-        ...product,
-        rating: averageRating
-      };
-
-    }));
-
-
     res.status(200).json({
       message: `تم العثور على ${products.length} منتج(ات)`,
-      data: productsWithRatings
+      data: products
     });
 
   } catch (err) {
@@ -581,6 +522,5 @@ exports.deleteImageToProduct = async (req, res) => {
     return res.status(500).json({ message: "حدث خطأ أثناء حذف الصورة: " + err.message });
   }
 };
-
 
 
