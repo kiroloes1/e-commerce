@@ -5,6 +5,7 @@ const authMiddleware = require(`${__dirname}/../middlewares/authMiddleware`);
 const authorization = require(`${__dirname}/../middlewares/authorization`);
 const reviewController = require(`${__dirname}/../controllers/review/review`);
 
+router.get('/getBestReviews', reviewController.getBestReviews);
 router.use(authMiddleware.protected);
 
 // Create review
