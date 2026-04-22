@@ -5,6 +5,8 @@ const authMiddleware = require(`${__dirname}/../middlewares/authMiddleware`);
 const authorization = require(`${__dirname}/../middlewares/authorization`);
 const reviewController = require(`${__dirname}/../controllers/review/review`);
 
+// Get reviews for a product
+router.get('/product/:productId', reviewController.getReviewsByProduct);
 
 router.get('/getBestReviews', reviewController.getBestReviews);
 router.use(authMiddleware.protected);
@@ -19,8 +21,6 @@ router.get('/userReviews', reviewController.getReviewsByUser);
 
 
 
-// Get reviews for a product
-router.get('/product/:productId', reviewController.getReviewsByProduct);
 
 // Update review
 router.put('/:reviewId', reviewController.updateReview);
