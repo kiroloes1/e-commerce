@@ -1,5 +1,7 @@
 //  const CartModel = req.app.locals.models.Cart;
-const ReviewModel=require(`${__dirname}/../../models/review`)
+const ReviewModel=require(`${__dirname}/../../models/review`);
+const OrderModel=require(`${__dirname}/../../models/order`);
+
 // get cart by user must be login first
 exports.createReview = async (req, res) => {
        try{
@@ -13,13 +15,13 @@ exports.createReview = async (req, res) => {
             comment
         });
 
-       const order = await OrderModel.findOne({ user: userId, "items.product": productId ,status: "delivered" });
+        const order = await OrderModel.findOne({ user: userId, "items.product": productId ,status: "delivered" });
         if (!order) {
             return res.status(400).json({
                 message: "لا يمكنك اضافه مراجعه لهذا المنتج لانك لم تشتريه"
             });
         }
-        
+
         await review.save();
         return res.status(201).json({
             message: "تم اضافه المراجعه بنجاح",
@@ -40,7 +42,7 @@ exports.getReviewsByProduct = async (req, res) => {
     try {
         
         const { productId } = req.params;
-        const reviews = await ReviewModel.find({ productId }).populate('userId', 'name');
+        const reviews = await ReviewModel.find({ productId }).populate('userId', 'userName');
         return res.status(200).json({
             data: reviews
         });
@@ -57,7 +59,7 @@ exports.getReviewsByUser = async (req, res) => {
     try {
         
         const { userId } = req.user;
-        const reviews = await ReviewModel.find({ userId }).populate('productId', 'name');
+        const reviews = await ReviewModel.find({ userId }).populate('productId', 'productName');
         return res.status(200).json({
             data: reviews
         });
