@@ -11,12 +11,28 @@ exports.createNotification = async (userId, title, message, type = "system") => 
 
   const io = getIO();
 
-  io.to(userId).emit("notification", {
-    title,
-    message,
-    type,
-    createdAt:new Date(),
-  });
+  if (userId) {
+    io.to(userId).emit("notification", {
+      title,
+        message,
+        type,
+        createdAt:new Date(),
+    });
+    } else {
+        io.emit("notification", {
+            title,
+            message,
+            type,
+            createdAt:new Date(),
+        });
+
+    }
+//   io.to(userId).emit("notification", {
+//     title,
+//     message,
+//     type,
+//     createdAt:new Date(),
+//   });
 
   return notification;
 };
