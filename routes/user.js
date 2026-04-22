@@ -7,6 +7,11 @@ const userController=require(`${__dirname}/../controllers/user/userController`)
 // login route
 router.post('/login', adminControllers.login);
 
+
+// login  by facebook route
+router.post('/facebookAuth', adminControllers.facebookAuth);
+
+
 // login route
 router.post('/sign-up', adminControllers.signUp);
 

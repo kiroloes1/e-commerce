@@ -4,6 +4,50 @@ const User = require(`${__dirname}/../../models/user`);
 const { Resend } = require('resend');
 const  { SendEmail } =require(`${__dirname}/../../services/nodemilar`);
 
+exports.facebookAuth = async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+
+   
+    const fbRes = await axios.get(
+      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${accessToken}`
+    );
+
+    const { id, name, email, picture } = fbRes.data;
+
+
+    let user = await User.findOne({
+      $or: [{ email }, { facebookId: id }],
+    });
+
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        facebookId: id,
+        image: picture?.data?.url,
+        provider: "facebook",
+      });
+    }
+
+
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Auth success",
+      token,
+      user,
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Facebook auth failed" });
+  }
+};
 
 // login 
 exports.login = async (req, res) => {
