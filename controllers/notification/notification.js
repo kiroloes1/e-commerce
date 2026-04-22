@@ -23,7 +23,7 @@ exports.createNotification = async (userId, title, message, type = "system") => 
 
 exports.getUserNotifications = async (req, res) => {
   const notifications = await Notification.find({
-    user: req.user.id,
+    user: req.userId,
   }).sort({ createdAt: -1 });
 
   res.json(notifications);
