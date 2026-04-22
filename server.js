@@ -7,6 +7,7 @@ app.use(cookieParser());
 app.set('trust proxy', true);
 const cors =require('cors')
 const bodyParser = require('body-parser');
+const notification = require('./models/notification');
 app.use(cors({
   origin: true,
   credentials: true
@@ -24,7 +25,7 @@ const orderRoute=require(`${__dirname}/routes/order`);
 const aboutRoute =require(`${__dirname}/routes/about`);
 const reviewRoute =require(`${__dirname}/routes/review`);
 const adminRoute =require(`${__dirname}/routes/admin`);
-
+const notificationRoute =require(`${__dirname}/routes/notification`)
 require(`${__dirname}/jobs/cleanNotifications`);
 
 config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority");
@@ -44,6 +45,8 @@ app.use('/v1/order',orderRoute);
 app.use('/v1/about',aboutRoute);
 app.use('/v1/review',reviewRoute);
 app.use('/v1/admin',adminRoute);
+app.use('/v1/notification',notificationRoute);
+
 
 
 const PORT=process.env.PORT || 5000;
