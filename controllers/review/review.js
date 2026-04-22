@@ -1,9 +1,9 @@
 //  const CartModel = req.app.locals.models.Cart;
-
+const ReviewModel=require(`${__dirname}/../../models/review`)
 // get cart by user must be login first
 exports.createReview = async (req, res) => {
        try{
-        const ReviewModel = req.app.locals.models.Review;
+        
         const {userId}=req.user;
         const {productId,rating,comment}=req.body;
         const review = new ReviewModel({
@@ -30,7 +30,7 @@ exports.createReview = async (req, res) => {
 // get reviews for a product
 exports.getReviewsByProduct = async (req, res) => {
     try {
-        const ReviewModel = req.app.locals.models.Review;
+        
         const { productId } = req.params;
         const reviews = await ReviewModel.find({ productId }).populate('userId', 'name');
         return res.status(200).json({
@@ -47,7 +47,7 @@ exports.getReviewsByProduct = async (req, res) => {
 // get reviews by user
 exports.getReviewsByUser = async (req, res) => {
     try {
-        const ReviewModel = req.app.locals.models.Review;
+        
         const { userId } = req.user;
         const reviews = await ReviewModel.find({ userId }).populate('productId', 'name');
         return res.status(200).json({
@@ -64,7 +64,7 @@ exports.getReviewsByUser = async (req, res) => {
 // delete review
 exports.deleteReview = async (req, res) => {
   try {
-    const ReviewModel = req.app.locals.models.Review;
+    
     const { reviewId } = req.params;
     const { userId } = req.user;
     const review = await ReviewModel.findOneAndDelete({ _id: reviewId, userId });
@@ -87,7 +87,7 @@ exports.deleteReview = async (req, res) => {
 // update review
 exports.updateReview = async (req, res) => {
     try {
-        const ReviewModel = req.app.locals.models.Review;
+        
         const { reviewId } = req.params;
         const { userId } = req.user;
         const { rating, comment } = req.body;

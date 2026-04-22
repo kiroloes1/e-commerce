@@ -2,7 +2,7 @@
 const mongoose = require("mongoose");
 
 
-module.exports = (conn) => {
+
 const ReviewSchema=new mongoose.Schema({
 
     userId:{
@@ -23,5 +23,5 @@ const ReviewSchema=new mongoose.Schema({
 
 },{timestamps:true});
 
-  return conn.model("Review", ReviewSchema);
-};
+  const reviewModel= mongoose.model("Review", ReviewSchema);
+module.exports=reviewModel;

@@ -3,6 +3,36 @@ const XLSX = require("xlsx");
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`)
 const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
 const fs = require('fs');
+const ReviewModel = require(`${__dirname}/../../models/review`);
+const mongoose = require("mongoose");
+
+
+const basePipeline = [
+  {
+    $lookup: {
+      from: "reviews",
+      localField: "_id",
+      foreignField: "productId",
+      as: "reviews"
+    }
+  },
+  {
+    $addFields: {
+      averageRating: {
+        $ifNull: [{ $avg: "$reviews.rating" }, 0]
+      },
+      reviewsCount: {
+        $size: "$reviews"
+      }
+    }
+  },
+  {
+    $project: {
+      purchasePrice: 0,
+       reviews: 0,
+    }
+  }
+];
 // create product
 exports.createProduct = async (req, res) => {
     const {
@@ -157,47 +187,82 @@ exports.createFromExcel = async (req, res) => {
 // GET all products admin
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await productModel.find();
+    const products = await productModel.aggregate([
+      {
+        $lookup: {
+          from: "reviews", // اسم collection
+          localField: "_id",
+          foreignField: "productId",
+          as: "reviews"
+        }
+      },
+      {
+        $addFields: {
+          averageRating: { $avg: "$reviews.rating" }
+        }
+      }
+    ]);
+
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
       data: products,
-      length:products.length
+      length: products.length
     });
+
   } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات: " + err.message });
+    return res.status(500).json({
+      message: "حدث خطأ أثناء جلب المنتجات: " + err.message
+    });
   }
 };
 
 //   GET all products clients
 exports.getAllProductsClients = async (req, res) => {
   try {
-    const products = await productModel.find({},{purchasePrice:0});
+    const products = await productModel.aggregate([
+      ...basePipeline
+    ]);
+
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
       data: products,
-      length:products.length
+      length: products.length
     });
+
   } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات: " + err.message });
+    return res.status(500).json({
+      message: err.message
+    });
   }
 };
 
 // get product by limit  to clients
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
-    const {limit} =req.query || 10
-  const products = await productModel
-  .find({
-    totalUnits: { $gt: 0 }
-  } ,{purchasePrice: 0} )
-  .limit(limit);
+    const limit = parseInt(req.query.limit) || 10;
+
+    const products = await productModel.aggregate([
+      {
+        $match: {
+          totalUnits: { $gt: 0 }
+        }
+      },
+      ...basePipeline,
+      {
+        $limit: limit
+      }
+    ]);
+
     return res.status(200).json({
-      message: "تم جلب جميع المنتجات بنجاح",
+      message: "تم جلب المنتجات بنجاح",
       data: products,
-      length:products.length
+      length: products.length
     });
+
   } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات: " + err.message });
+    return res.status(500).json({
+      message: err.message
+    });
   }
 };
 
@@ -223,90 +288,80 @@ exports.filterProductBasedOnCategory=async(req,res)=>{
 exports.getProductsByCategory = async (req, res) => {
   try {
     const { category } = req.query;
-    let limit = parseInt(req.query.limit) || 8;
+    const limit = parseInt(req.query.limit) || 8;
 
-    let products;
+    let pipeline = [];
 
-    if (!category) {
-    
-      products = await productModel
-        .find({}, { purchasePrice: 0 })
-        .limit(limit);
-    } else {
-      
-      products = await productModel
-        .find({ category: category }, { purchasePrice: 0 })
-        .limit(limit);
+    if (category) {
+      pipeline.push({
+        $match: { category: category }
+      });
+    }
 
-     
-      if (products.length === 0) {
-        products = await productModel
-          .find({}, { purchasePrice: 0 })
-          .limit(limit);
+    pipeline.push(
+      ...basePipeline,
+      {
+        $limit: limit
       }
+    );
+
+    let products = await productModel.aggregate(pipeline);
+
+    // fallback
+    if (products.length === 0 && category) {
+      products = await productModel.aggregate([
+        ...basePipeline,
+        { $limit: limit }
+      ]);
     }
 
     return res.status(200).json({
-      message: "تم جلب جميع الاصناف بنجاح",
+      message: "تم جلب المنتجات بنجاح",
       data: products,
       length: products.length
     });
 
   } catch (err) {
     return res.status(500).json({
-      message: "حدث خطأ أثناء جلب المنتج: " + err.message
+      message: err.message
     });
   }
 };
+
 // GET product by ID
+
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await productModel.findById(id,{purchasePrice:0});
-    if (!product) {
-      return res.status(404).json({ message: "المنتج غير موجود" });
+
+    const product = await productModel.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(id)
+        }
+      },
+      ...basePipeline
+    ]);
+
+    if (product.length === 0) {
+      return res.status(404).json({
+        message: "المنتج غير موجود"
+      });
     }
+
     return res.status(200).json({
       message: "تم جلب المنتج بنجاح",
-      data: product
+      data: product[0]
     });
+
   } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ أثناء جلب المنتج: " + err.message });
+    return res.status(500).json({
+      message: err.message
+    });
   }
 };
 
 
-// DELETE product
-exports.deleteProduct = async (req, res) => {
-  try {
-    const { productId } = req.params;
-    if (!productId) {
-      return res.status(400).json({ message: "من فضلك اختر المنتج أولاً" });
-    }
-
-    // Find product first
-    const product = await productModel.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: "هذا المنتج غير موجود" });
-    }
-
-    // Delete product image from Cloudinary if exists
-    if (product.image?.publicId) {
-      await cloudinary.uploader.destroy(product.image.publicId);
-    }
-
-    // Delete product from database
-    await productModel.findByIdAndDelete(productId);
-
-    res.status(200).json({
-      message: "تم حذف المنتج بنجاح",
-      product
-    });
-
-  } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ أثناء حذف المنتج: " + err.message });
-  }
-};
 
 
 // search by query + limit  
@@ -444,6 +499,39 @@ exports.updateProduct = async (req, res) => {
     res.status(500).json({ message: "حدث خطأ أثناء تحديث المنتج: " + err.message });
   }
 };
+
+// DELETE product
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    if (!productId) {
+      return res.status(400).json({ message: "من فضلك اختر المنتج أولاً" });
+    }
+
+    // Find product first
+    const product = await productModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "هذا المنتج غير موجود" });
+    }
+
+    // Delete product image from Cloudinary if exists
+    if (product.image?.publicId) {
+      await cloudinary.uploader.destroy(product.image.publicId);
+    }
+
+    // Delete product from database
+    await productModel.findByIdAndDelete(productId);
+
+    res.status(200).json({
+      message: "تم حذف المنتج بنجاح",
+      product
+    });
+
+  } catch (err) {
+    return res.status(500).json({ message: "حدث خطأ أثناء حذف المنتج: " + err.message });
+  }
+};
+
 
 
 // upload image to product
