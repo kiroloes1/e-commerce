@@ -13,7 +13,7 @@ exports.createReview = async (req, res) => {
             comment
         });
 
-        const order = await OrderModel.findOne({ userId, "items.product": productId ,status: "delivered" });
+       const order = await OrderModel.findOne({ user: userId, "items.product": productId ,status: "delivered" });
         if (!order) {
             return res.status(400).json({
                 message: "لا يمكنك اضافه مراجعه لهذا المنتج لانك لم تشتريه"
