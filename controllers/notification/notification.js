@@ -15,7 +15,7 @@ exports.createNotification = async (userId, title, message, type = "system") => 
     title,
     message,
     type,
-    notificationId: notification._id,
+    createdAt:new Date(),
   });
 
   return notification;
@@ -32,7 +32,10 @@ exports.getUserNotifications = async (req, res) => {
     }
 
     const notifications = await Notification.find({
-      user: userId,
+      $or: [
+        { user: userId },
+        { user: null } // system notifications
+      ],
     })
       .sort({ createdAt: -1 })
       .lean();
@@ -48,6 +51,7 @@ exports.getUserNotifications = async (req, res) => {
 };
 
 
+
 exports.deleteOldNotifications=async()=> {
   const threeDaysAgo = new Date();
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 1);
@@ -58,3 +62,4 @@ exports.deleteOldNotifications=async()=> {
 
   console.log("Deleted:", result.deletedCount);
 }
+

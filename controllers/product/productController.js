@@ -91,17 +91,18 @@ exports.createProduct = async (req, res) => {
         await newProduct.save();
 
 
-        // await createNotification(
-        //  "منتج جديد" ,
-        //  "تم إضافة منتج جديد في المتجر " + newProduct.productName,
-        // )
-        const io = getIO();
-        io.emit("notification", {
-          title: "منتج جديد" ,
-          message: "تم إضافة منتج جديد في المتجر " + newProduct.productName,
-          productId: newProduct._id,
-          createdAt:new Date(),
-        });
+         createNotification(
+          null,
+         "منتج جديد" ,
+         "تم إضافة منتج جديد في المتجر " + newProduct.productName,
+        )
+        // const io = getIO();
+        // io.emit("notificatio", {
+        //   title: "منتج جديد" ,
+        //   message: "تم إضافة منتج جديد في المتجر " + newProduct.productName,
+        //   productId: newProduct._id,
+        //   createdAt:new Date(),
+        // });
 
 
         return res.status(201).json({

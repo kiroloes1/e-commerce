@@ -6,17 +6,18 @@ exports.sendToAllUsers = (req, res) => {
 
   const io = getIO();
 
-  io.emit("notification", {
-        title: title || "الادمن يرحب بك",
-        message: message || "هذه رسالة من الادمن لجميع المستخدمين",
-    createdAt:new Date(),
-  });
+//   io.emit("admin_message", {
+//         title: title || "الادمن يرحب بك",
+//         message: message || "هذه رسالة من الادمن لجميع المستخدمين",
+//         createdAt:new Date(),
+//     });
 
 
-// await createNotification(
-//  title || "الادمن يرحب بك",
-//  message || "هذه رسالة من الادمن لجميع المستخدمين",
-// )
+ createNotification(
+  null, 
+ title || "الادمن يرحب بك",
+ message || "هذه رسالة من الادمن لجميع المستخدمين",
+)
 
   res.json({ success: true });
 };
