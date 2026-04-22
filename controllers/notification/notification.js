@@ -22,11 +22,29 @@ exports.createNotification = async (userId, title, message, type = "system") => 
 };
 
 exports.getUserNotifications = async (req, res) => {
-  const notifications = await Notification.find({
-    user: req.userId,
-  }).sort({ createdAt: -1 });
+  try {
+    const userId = req.userId;
 
-  res.json(notifications);
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized: userId missing",
+      });
+    }
+
+    const notifications = await Notification.find({
+      user: userId,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json(notifications);
+  } catch (error) {
+    console.error("Get notifications error:", error);
+
+    return res.status(500).json({
+      message: "Server error while fetching notifications",
+    });
+  }
 };
 
 
