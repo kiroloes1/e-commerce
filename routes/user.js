@@ -9,7 +9,7 @@ router.post('/login', adminControllers.login);
 
 
 // login  by phone route
-router.post('/phoneLogin', adminControllers.facebookAuth);
+router.post('/phoneLogin', adminControllers.phoneLogin);
 
 
 // login route
