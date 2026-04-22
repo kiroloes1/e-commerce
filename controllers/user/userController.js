@@ -2,6 +2,7 @@ const UserModel = require(`${__dirname}/../../models/user`);
 
 
 // update user
+// update user
 exports.updateUser = async (req, res) => {
   try {
     const { customerId } = req.params;
@@ -12,13 +13,12 @@ exports.updateUser = async (req, res) => {
     if (userName) update.userName = userName;
     if (email) update.email = email;
     if (address) update.address = address;
+    if (address) update.phoneNumber = phoneNumber;
+
     
     const query = { $set: update };
 
    
-    if (phoneNumber) {
-      query.$push = { phoneNumber };
-    }
 
     const user = await UserModel.findByIdAndUpdate(
       customerId,
@@ -42,7 +42,6 @@ exports.updateUser = async (req, res) => {
     });
   }
 };
-
 
 // delete user
 exports.deleteUser = async (req, res) => {
