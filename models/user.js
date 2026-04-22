@@ -23,10 +23,11 @@ const userSchema=new mongoose.Schema({
          building:String,
          floor:String,
      },
-      phoneNumber: [{
+      phoneNumber: {
       type: String,
+      unique: true,
       match: [/^(010|011|012|015)[0-9]{8}$/, 'Invalid Egyptian phone number']
-      }],
+      },
      role:{
         type:String,
         enum:['customer','admin'],
