@@ -4,39 +4,46 @@ const OrderModel=require(`${__dirname}/../../models/order`);
 
 // get cart by user must be login first
 exports.createReview = async (req, res) => {
-       try{
-        
-        const {userId}=req.user;
-        const {productId,rating,comment}=req.body;
-        const review = new ReviewModel({
-            userId,
-            productId,
-            rating, 
-            comment
-        }).populate('userId', 'userName');;
+    try {
 
-        const order = await OrderModel.findOne({ user: userId, "items.product": productId ,status: "delivered" });
-        
+        const { userId } = req.user;
+        const { productId, rating, comment } = req.body;
+
+        const order = await OrderModel.findOne({
+            user: userId,
+            "items.product": productId,
+            status: "delivered"
+        });
+
         if (!order) {
             return res.status(400).json({
                 message: "لا يمكنك اضافه مراجعه لهذا المنتج لانك لم تشتريه"
             });
         }
 
+        const review = new ReviewModel({
+            userId,
+            productId,
+            rating,
+            comment
+        });
 
         await review.save();
+
+        // هنا نعمل populate صح
+        await review.populate('userId', 'userName');
+
         return res.status(201).json({
             message: "تم اضافه المراجعه بنجاح",
             data: review
         });
 
-
-       }catch(err){
+    } catch (err) {
         return res.status(500).json({
             message: "Server error",
             error: err.message
         });
-       }
+    }
 };
 
 // get reviews for a product
