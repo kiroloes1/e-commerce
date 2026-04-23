@@ -13,7 +13,7 @@ exports.createReview = async (req, res) => {
             productId,
             rating, 
             comment
-        });
+        }).populate('userId', 'userName');;
 
         const order = await OrderModel.findOne({ user: userId, "items.product": productId ,status: "delivered" });
         
