@@ -87,7 +87,7 @@ exports.updateStatus = async (req, res) => {
         await createNotification(
             order.user.toString(),
            s,
-           "حالة طلبك رقم " + order._id + " تم تحديثها إلى " + s,
+           "حالة طلبك رقم " + order.orderNumber + " تم تحديثها إلى " + s,
         )
         
 

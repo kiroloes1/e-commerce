@@ -2,7 +2,6 @@ const UserModel = require(`${__dirname}/../../models/user`);
 
 
 // update user
-// update user
 exports.updateUser = async (req, res) => {
   try {
     const { customerId } = req.params;
@@ -42,6 +41,7 @@ exports.updateUser = async (req, res) => {
     });
   }
 };
+
 
 // delete user
 exports.deleteUser = async (req, res) => {
