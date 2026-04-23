@@ -107,7 +107,8 @@ exports.updateReview = async (req, res) => {
             { _id: reviewId, userId },
             { rating, comment },
             { new: true, runValidators: true }
-        );
+                ).populate('productId', 'productName').populate('userId', 'userName');
+
 
         if (!review) {
             return res.status(404).json({
