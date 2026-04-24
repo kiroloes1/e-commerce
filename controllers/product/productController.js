@@ -204,7 +204,21 @@ exports.createFromExcel = async (req, res) => {
 // GET all products admin
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await productModel.find();
+    const products = await productModel.aggregate([
+      {
+        $lookup: {
+          from: "reviews", // اسم collection
+          localField: "_id",
+          foreignField: "productId",
+          as: "reviews"
+        }
+      },
+      {
+        $addFields: {
+          averageRating: { $avg: "$reviews.rating" }
+        }
+      }
+    ]);
 
     return res.status(200).json({
       message: "تم جلب جميع المنتجات بنجاح",
