@@ -1,7 +1,7 @@
 const cron = require("node-cron");
 const Notification = require(`${__dirname}/../models/notification`);
 
-cron.schedule("0 0 * * *", async () => {
+cron.schedule("* * * * *", async () => {
   try {
     console.log("Running notification cleanup job...");
 
