@@ -6,7 +6,7 @@ cron.schedule("0 0 * * *", async () => {
     console.log("Running notification cleanup job...");
 
     const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 1);
 
     const result = await Notification.deleteMany({
       createdAt: { $lt: threeDaysAgo },
