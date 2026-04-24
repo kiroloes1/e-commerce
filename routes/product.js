@@ -18,6 +18,8 @@ router.get('/allClientsLimit', productController.getAllProductsClientsLimit);
 // get all products  based on category
 router.get('/getProductsByCategory', productController.getProductsByCategory);
 
+//  Get all products
+router.get('/all',authorization.role('admin'), productController.getAllProducts);
 
 //  Search products
 router.get('/search/query', productController.search);
@@ -36,8 +38,6 @@ router.use(authMiddleware.protected);
 
 router.use(authorization.role('admin'));
 
-//  Get all products
-router.get('/all', productController.getAllProducts);
 
 
 
