@@ -19,7 +19,7 @@ router.get('/allClientsLimit', productController.getAllProductsClientsLimit);
 router.get('/getProductsByCategory', productController.getProductsByCategory);
 
 //  Get all products
-router.get('/all',authorization.role('admin'), productController.getAllProducts);
+router.get('/all',authMiddleware.protected,authorization.role('admin'), productController.getAllProducts);
 
 //  Search products
 router.get('/search/query', productController.search);
