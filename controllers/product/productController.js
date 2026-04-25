@@ -7,7 +7,7 @@ const ReviewModel = require(`${__dirname}/../../models/review`);
 const mongoose = require("mongoose");
 const { getIO } = require(`${__dirname}/../../sockets/socket`);
 const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
-
+const OrderModel =require(`${__dirname}/../../models/order`);
 
 const basePipeline = [
   {
@@ -35,6 +35,8 @@ const basePipeline = [
     }
   }
 ];
+
+//   ############   add new product #############
 // create product
 exports.createProduct = async (req, res) => {
     const {
@@ -48,6 +50,7 @@ exports.createProduct = async (req, res) => {
         packageSellingPrice,
         pieceSellingPrice,
         purchasePrice,
+        imageUrl
         
     } = req.body;
 
@@ -84,6 +87,10 @@ exports.createProduct = async (req, res) => {
             packageSellingPrice,
             pieceSellingPrice,
             purchasePrice,
+            image:{
+              url:imageUrl || "",
+              publicId:""
+            }
 
         });
 
@@ -96,13 +103,7 @@ exports.createProduct = async (req, res) => {
          "منتج جديد" ,
          "تم إضافة منتج جديد في المتجر " + newProduct.productName,
         )
-        // const io = getIO();
-        // io.emit("notificatio", {
-        //   title: "منتج جديد" ,
-        //   message: "تم إضافة منتج جديد في المتجر " + newProduct.productName,
-        //   productId: newProduct._id,
-        //   createdAt:new Date(),
-        // });
+
 
 
         return res.status(201).json({
@@ -115,7 +116,6 @@ exports.createProduct = async (req, res) => {
         return res.status(500).json({ message: "حدث خطأ ما" + err.message });
     }
 };
-
 
 // create from excel sheet
 exports.createFromExcel = async (req, res) => {
@@ -201,6 +201,11 @@ exports.createFromExcel = async (req, res) => {
 };
 
 
+//   ############    get product #############
+
+
+//  ########  get product to admin   ###################
+
 // GET all products admin
 exports.getAllProducts = async (req, res) => {
   try {
@@ -233,6 +238,32 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
+// GET  product  to admin
+exports.getProductByIdAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+
+
+    if (product.length === 0) {
+      return res.status(404).json({
+        message: "المنتج غير موجود"
+      });
+    }
+
+    return res.status(200).json({
+      message: "تم جلب المنتج بنجاح",
+      data: product[0]
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      message: err.message
+    });
+  }
+};
+
+
 //   GET all products clients
 exports.getAllProductsClients = async (req, res) => {
   try {
@@ -253,11 +284,13 @@ exports.getAllProductsClients = async (req, res) => {
   }
 };
 
-// get product by limit  to clients
+// get product by limit  to clients (global login or not )
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
+    const userId=req.user.userId;
 
+    
     const products = await productModel.aggregate([
       {
         $match: {
@@ -270,6 +303,35 @@ exports.getAllProductsClientsLimit = async (req, res) => {
       }
     ]);
 
+
+if (userId) {
+  const userOrders = await OrderModel.find(
+    { user: userId },
+    { "items.product": 1 }
+  ).populate({
+    path: "items.product",
+    select: "category"
+  });
+
+  const categories = userOrders.flatMap(order =>
+    order.items.map(item => item.product?.category)
+  );
+
+  const uniqueCategories = [...new Set(categories.map(c => c.toString()))];
+
+  const filterProduct = await productModel.find({
+    category: { $in: uniqueCategories }
+  });
+
+  console.log(filterProduct);
+
+      return res.status(200).json({
+      message: "تم جلب المنتجات بنجاح",
+      data: filterProduct,
+      length: filterProduct.length
+    });
+
+}
     return res.status(200).json({
       message: "تم جلب المنتجات بنجاح",
       data: products,
@@ -377,9 +439,6 @@ exports.getProductById = async (req, res) => {
     });
   }
 };
-
-
-
 
 // search by query + limit  
 
@@ -538,6 +597,12 @@ exports.suggestion = async (req, res) => {
     });
   }
 };
+
+
+
+//  #############   update & delete ##########################
+
+
 // UPDATE product
 exports.updateProduct = async (req, res) => {
   try {
@@ -600,6 +665,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+
 // DELETE product
 exports.deleteProduct = async (req, res) => {
   try {
@@ -633,6 +699,7 @@ exports.deleteProduct = async (req, res) => {
 };
 
 
+// ################   update And delete image #####################
 
 // upload image to product
 exports.uploadImageToProduct = async (req, res) => {
@@ -678,7 +745,6 @@ exports.uploadImageToProduct = async (req, res) => {
   }
 };
 
-
 // DELETE image from product
 exports.deleteImageToProduct = async (req, res) => {
   try {
@@ -695,11 +761,10 @@ exports.deleteImageToProduct = async (req, res) => {
     // Delete image from Cloudinary if exists
     if (product.image?.publicId) {
       await cloudinary.uploader.destroy(product.image.publicId);
+
+    } 
       product.image = null; // remove reference from DB
       await product.save();
-    } else {
-      return res.status(400).json({ message: "لا توجد صورة لحذفها لهذا المنتج" });
-    }
 
     res.status(200).json({
       message: "تم حذف الصورة لهذا المنتج بنجاح",
