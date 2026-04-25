@@ -28,7 +28,9 @@ router.get('/viewMyOrdersDeliverd', orderUser.viewMyOrdersDeliverd);
 router.use(authorization.role('admin'));
 
 // ADMIN ROUTES
-router.get('/all',        adminOrderUser.viewAllOrders);
+router.get('/all',adminOrderUser.viewAllOrders);
+router.get('/maybesell', adminOrderUser.maybesell);
+router.get('/bestSellerAdmin',adminOrderUser.bestSellerAdmin);
 router.get('/by-id/:id',  adminOrderUser.viewOrderById);
 router.put('/status/:id', adminOrderUser.updateStatus);
 router.put('/approve/:id',adminOrderUser.approvePayment);
