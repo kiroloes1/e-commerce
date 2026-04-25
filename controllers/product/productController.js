@@ -238,11 +238,33 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
+
+
 // GET  product  to admin
 exports.getProductByIdAdmin = async (req, res) => {
   try {
     const { id } = req.params;
 
+     const products = await productModel.aggregate([
+      {
+          $match: {
+          _id: new mongoose.Types.ObjectId(id)
+               }
+      },
+      {
+        $lookup: {
+          from: "reviews", 
+          localField: "_id",
+          foreignField: "productId",
+          as: "reviews"
+        }
+      },
+      {
+        $addFields: {
+          averageRating: { $avg: "$reviews.rating" }
+        }
+      }
+    ]);
 
 
     if (product.length === 0) {
