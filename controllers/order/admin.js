@@ -1,7 +1,7 @@
 const Order=require(`${__dirname}/../../models/order`);
 const { getIO } = require(`${__dirname}/../../sockets/socket`);
 const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
-
+ const cartModel=require(`${__dirname}/../../models/cart`)
 //view all orders
 exports.viewAllOrders = async (req, res) => {
     try {
@@ -200,3 +200,97 @@ exports.addAdminNote = async (req, res) => {
         });
     }
 };
+
+// product may be sell
+exports.maybesell =async(req,res)=>{
+    try{
+        const carts=await cartModel.find({},{"items.product":1 }).populate({
+            path:"items.product",
+            select:"productName"
+        });
+
+       const products = carts.flatMap(cart =>
+            cart.items.map(item => item.product)
+            );
+
+            const uniqueProducts = [...new Set(products)];
+            
+
+            return res.status(200).json({
+                message:"تم جلب المنتجات المحتمل تباع ",
+                product:uniqueProducts
+            })
+
+
+    }catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
+    }
+
+
+    // bset seller
+
+exports.bestSellerAdmin = async (req, res) => {
+  try {
+    let bestSellers = await Order.aggregate([
+      // 1. تفكيك items array
+      { $unwind: "$items" },
+
+      // 2. تجميع المبيعات لكل product
+      {
+        $group: {
+          _id: "$items.product",
+          totalSold: { $sum: "$items.quantity" },
+          totalRevenue: {
+            $sum: {
+              $multiply: ["$items.quantity", "$items.price"]
+            }
+          },
+          productName: { $first: "$items.productName" }
+        }
+      },
+
+      // 3. ترتيب حسب الأكثر مبيعًا
+      { $sort: { totalSold: -1 } },
+
+        { $limit: 5 },
+      // 4. جلب بيانات المنتج من Product collection
+      {
+        $lookup: {
+          from: "products", // اسم الكوليكشن في MongoDB
+          localField: "_id",
+          foreignField: "_id",
+          as: "product"
+        }
+      },
+
+      // 5. تحويل المنتج من array إلى object
+      { $unwind: "$product" },
+
+      // 6. شكل النتيجة النهائي
+      {
+        $project: {
+          productName: 1,
+
+        }
+      }
+    ]);
+
+  
+
+    res.status(200).json({
+      success: true,
+      count: bestSellers.length,
+      data: bestSellers
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
