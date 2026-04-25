@@ -310,7 +310,7 @@ exports.getAllProductsClients = async (req, res) => {
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const {userId}=req.body || null;
+    const {userId}=req.query || null;
 
     
     const products = await productModel.aggregate([
