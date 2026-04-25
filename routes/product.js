@@ -50,6 +50,7 @@ router.post('/', productController.createProduct);
 //  Create products from Excel
 router.post('/add-product-from-excel-sheets', uploads.single('file'), productController.createFromExcel);
 
+router.get('/getByIdForAdmin/:id', productController.getProductByIdAdmin );
 
 //  Update product
 router.put('/:productId', productController.updateProduct);
