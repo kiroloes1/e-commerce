@@ -18,6 +18,9 @@ router.post('/', reviewController.createReview);
 router.get('/userReviews', reviewController.getReviewsByUser);
 
 
+//  Get reviews 
+router.get('/getReviews', reviewController.getReviews);
+
 
 
 
