@@ -136,7 +136,7 @@ exports.updateReview = async (req, res) => {
 
 exports.getReviews=async(req,res)=>{
       try {
-        const reviews = await ReviewModel.find().populate('productId', 'productName' ).populate('userId', 'userName');   
+        const reviews = await ReviewModel.find().populate('productId', 'productName' ).populate('userId', 'userName').limit(50);   
         return res.status(200).json({
             data: reviews
         });
