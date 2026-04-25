@@ -134,6 +134,19 @@ exports.updateReview = async (req, res) => {
     }
 };
 
+exports.getReviews=async(req,res)=>{
+      try {
+        const reviews = await ReviewModel.find().populate('productId', 'productName' ).populate('userId', 'userName');   
+        return res.status(200).json({
+            data: reviews
+        });
+    } catch (err) {
+        return res.status(500).json({
+            message: "Server error",
+            error: err.message
+        });
+    }  
+}
 
 
 
