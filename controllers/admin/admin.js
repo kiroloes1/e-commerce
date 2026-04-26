@@ -1,5 +1,5 @@
 const { getIO } = require(`${__dirname}/../../sockets/socket`);
-// const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
+ const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
 
 exports.sendToAllUsers = (req, res) => {
   const { message, title } = req.body;
