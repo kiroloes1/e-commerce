@@ -31,14 +31,16 @@ router.put('/updateProfile', userController.updateProfile);
 router.get('/getProfile', userController.getProfile);
 
 
+router.use(role("superadmin"));
+router.get('/getAllAdmin', userController.getAllAdmin);
+
 router.use(role("admin"));
 router.get('/getUsers', userController.getUsers);
 router.get('/getUser/:customerId', userController.getUser);
 router.patch('/deactivateUserById/:customerId', userController.deactivateUserById);
 
 router.put('/updateUser/:customerId', userController.updateUser);
-router.use(role("superadmin"));
-router.get('/getAllAdmin', userController.getAllAdmin);
+
 
 
 
