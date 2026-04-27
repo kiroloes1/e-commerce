@@ -1,5 +1,6 @@
 const UserModel = require(`${__dirname}/../../models/user`);
-
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 // update user
 exports.updateUser = async (req, res) => {
