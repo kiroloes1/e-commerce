@@ -208,7 +208,7 @@ exports.updateProfile=async(req,res)=>{
 // get all admin
 exports.getAllAdmin = async (req, res) => {
   try {
-    const users = await UserModel.find({role:"superadmin"}, {userName:1 ,email:1 ,phoneNumber:1 ,role:1 ,active:1});
+    const users = await UserModel.find({role:"admin"}, {userName:1 ,email:1 ,phoneNumber:1 ,role:1 ,active:1});
 
     res.status(200).json({
       message: "تم جلب جميع المستخدمين بنجاح",
