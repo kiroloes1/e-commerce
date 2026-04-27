@@ -222,3 +222,70 @@ exports.getAllAdmin = async (req, res) => {
     });
   }
 };
+
+
+//  crete admin
+exports.createAdmin = async (req, res) => {
+  try {
+    const { username, email, password, role, notes } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "كل الحقول مطلوبة" });
+    }
+
+    const existing = await Admin.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "الإيميل مستخدم بالفعل" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const admin = await UserModel.create({
+      username,
+      email,
+      password: hashedPassword,
+      role,
+      notes
+    });
+
+    res.status(201).json({
+      message: "تم إنشاء الأدمن بنجاح",
+      admin
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// change role
+exports.changeRole = async (req, res) => {
+  try {
+   
+
+     
+    if (!req.body.role){
+      return res.status(400).json("من فضلك اختر دور الادمين")
+    }
+
+
+    const admin = await UserModel.findByIdAndUpdate(
+      req.params.id,
+      {role: req.body.role},
+      { new: true, runValidators: true }
+    );
+
+    if (!admin) {
+      return res.status(404).json({ message: "الأدمن غير موجود" });
+    }
+
+    res.status(200).json({
+      message: "تم التحديث بنجاح",
+      admin
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
