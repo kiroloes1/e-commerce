@@ -147,7 +147,7 @@ exports.createAdmin = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const admin = await UserModel.create({
-      username,
+      userName:username,
       email,
       password: hashedPassword,
       role,
