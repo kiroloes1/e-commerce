@@ -35,8 +35,7 @@ router.get('/:id', productController.getProductById);
 
 
 router.use(authMiddleware.protected);
-
-router.use(authorization.role('admin'));
+router.use(role("superadmin" ,"admin"));
 
 
 

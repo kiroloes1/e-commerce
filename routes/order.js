@@ -25,7 +25,7 @@ router.get('/viewMyOrdersDeliverd', orderUser.viewMyOrdersDeliverd);
 
 
 // ADMIN MIDDLEWARE
-router.use(authorization.role('admin'));
+router.use(role("superadmin" ,"admin"));
 
 // ADMIN ROUTES
 router.get('/all',adminOrderUser.viewAllOrders);

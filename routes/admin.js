@@ -10,7 +10,7 @@ const adminController = require(`${__dirname}/../controllers/admin/admin`);
 
 router.use(authMiddleware.protected);
 
-router.use(authorization.role('admin'));
+router.use(role("superadmin" ,"admin"));
 
 
 

@@ -22,9 +22,6 @@ router.get('/userReviews', reviewController.getReviewsByUser);
 router.get('/getReviews', reviewController.getReviews);
 
 
-
-
-
 // Update review
 router.put('/:reviewId', reviewController.updateReview);
 

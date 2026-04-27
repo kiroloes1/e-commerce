@@ -19,7 +19,7 @@ router.get("/", getAbout);
 router.get("/wallet", getWalletNumbers);
 
 router.use(authMiddleware.protected);
-router.use(authorization.role('admin'));
+router.use(role("superadmin" ,"admin"));
 
 router.post("/", createAbout);
 
