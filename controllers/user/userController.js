@@ -133,7 +133,7 @@ exports.getAllAdmin = async (req, res) => {
 //  crete admin
 exports.createAdmin = async (req, res) => {
   try {
-    const { username, email, password, role, notes } = req.body;
+    const { username, email, password, role, notes  ,phoneNumber} = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: "كل الحقول مطلوبة" });
@@ -147,7 +147,8 @@ exports.createAdmin = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const admin = await UserModel.create({
-      userName:username,
+      userName,
+      phoneNumber,
       email,
       password: hashedPassword,
       role,
