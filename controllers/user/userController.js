@@ -91,6 +91,50 @@ exports.getUser = async (req, res) => {
   }
 };
 
+
+// get all users
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await UserModel.find({}, {userName:1 ,email:1 ,phoneNumber:1 ,role:1 ,active:1});
+
+    res.status(200).json({
+      message: "تم جلب جميع المستخدمين بنجاح",
+      users,
+      counts: users.length
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "حدث خطأ أثناء جلب المستخدمين: " + err.message
+    });
+  }
+};
+
+
+exports.deactivateUserById=async(req,res)=>{
+      const { customerId } = req.params;
+
+     const user = await UserModel.findById(customerId,{active:1});
+       if (!user) {
+      return res.status(404).json({ message: "هذا المستخدم غير موجود!" });
+    }
+    try{
+        user.active=!user.active;
+        await user.save();
+
+        res.status(200).json({
+      message: "تم جلب المستخدم بنجاح",
+      user
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "حدث خطأ أثناء جلب المستخدم: " + err.message
+    });
+  }
+    
+}
+
 // get profile
 exports.getProfile = async (req, res) => {
   try {
@@ -115,23 +159,6 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-// get all users
-exports.getUsers = async (req, res) => {
-  try {
-    const users = await UserModel.find({}, "-password");
-
-    res.status(200).json({
-      message: "تم جلب جميع المستخدمين بنجاح",
-      users,
-      counts: users.length
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      message: "حدث خطأ أثناء جلب المستخدمين: " + err.message
-    });
-  }
-};
 
 // update profile
 exports.updateProfile=async(req,res)=>{
