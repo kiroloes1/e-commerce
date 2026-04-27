@@ -37,8 +37,11 @@ router.delete('/deleteUser/:customerId', userController.deleteUser);
 router.get('/getUser/:customerId', userController.getUser);
 
 
+
 router.use(role("superadmin"));
 router.get('/getAllAdmin', userController.getAllAdmin);
+router.get('/createAdmin', userController.createAdmin);
+router.get('/changeRole', userController.changeRole);
 
 router.use(role("admin"));
 router.get('/getUsers', userController.getUsers);
