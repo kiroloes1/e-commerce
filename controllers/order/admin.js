@@ -5,9 +5,11 @@ const { createNotification } = require(`${__dirname}/../../controllers/notificat
 //view all orders
 exports.viewAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find()
+        const orders = await Order.find({},{orderNumber:1,user:1,finalPrice:1 
+            ,customerName:1 ,phone:1 
+            ,  address:1  ,status:1 ,payment:1})
             .sort({ createdAt: -1 })
-            .populate("user", "userName email phoneNumber address");
+            .populate("user", "userName  phoneNumber ");
 
         res.status(200).json({
             results: orders.length,
@@ -70,25 +72,25 @@ exports.updateStatus = async (req, res) => {
         let s="قيد التنفيذ";
         if (status === "confirmed"){ order.confirmedAt = new Date(); s="تم تأكيد الطلب";}
         if (status === "shipped") {order.shippedAt = new Date();     s="تم شحن الطلب";}
-        if (status === "delivered"){ order.deliveredAt = new Date(); s="تم توصيل الطلب";}
+        if (status === "delivered"){
+            order.deliveredAt = new Date();
+            s="تم توصيل الطلب";        
+            order.payment.status = "paid";
+            order.payment.paidAt = new Date();
+        }
         if (status === "cancelled") {order.cancelledAt = new Date(); s= "  تم الغاء الطلب من قبل المسئول";}
 
 
         await order.save();
 
      
-        //    const io = getIO(); 
-        //      io.to(order.user.toString()).emit("order_status", {
-        //     title: s,
-        //     message: "حالة طلبك رقم " + order._id + " تم تحديثها إلى " + s,
-        //     orderId: order._id
-        // });
+
 
         await createNotification(
             order.user.toString(),
            s,
            "حالة طلبك رقم " + order.orderNumber + " تم تحديثها إلى " + s,
-        )
+         )
         
 
         res.status(200).json({
@@ -229,9 +231,7 @@ exports.maybesell =async(req,res)=>{
     }
     }
 
-
-    // bset seller
-
+// bset seller
 exports.bestSellerAdmin = async (req, res) => {
   try {
     let bestSellers = await Order.aggregate([
@@ -293,4 +293,3 @@ exports.bestSellerAdmin = async (req, res) => {
     });
   }
 };
-
