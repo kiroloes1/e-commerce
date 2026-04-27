@@ -53,7 +53,8 @@ const userSchema=new mongoose.Schema({
         type: Number,
         default:0
         },
-        pandding:Date
+        pandding:Date,
+       notes:{type:String}
 
 },{timestamps:true});
 
