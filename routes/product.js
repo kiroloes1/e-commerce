@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require(`${__dirname}/../middlewares/authMiddleware`);
-const authorization = require(`${__dirname}/../middlewares/authorization`);
+const {role}=require(`${__dirname}/../middlewares/authorization`)
 const productController = require(`${__dirname}/../controllers/product/productController`);
 const upload = require(`${__dirname}/../config/multerConfig`);
 
@@ -19,7 +19,7 @@ router.get('/allClientsLimit', productController.getAllProductsClientsLimit);
 router.get('/getProductsByCategory', productController.getProductsByCategory);
 
 //  Get all products
-router.get('/all',authMiddleware.protected,authorization.role('admin'), productController.getAllProducts);
+router.get('/all',authMiddleware.protected,role('admin'), productController.getAllProducts);
 
 //  Search products
 router.get('/search/query', productController.search);

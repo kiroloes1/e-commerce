@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const authMiddleware = require(`${__dirname}/../middlewares/authMiddleware`);
-const authorization = require(`${__dirname}/../middlewares/authorization`);
+const {role}=require(`${__dirname}/../middlewares/authorization`)
 const reviewController = require(`${__dirname}/../controllers/review/review`);
 
 // Get reviews for a product
