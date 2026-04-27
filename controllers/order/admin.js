@@ -7,7 +7,7 @@ exports.viewAllOrders = async (req, res) => {
     try {
         const orders = await Order.find({},{orderNumber:1,user:1,finalPrice:1 
             ,customerName:1 ,phone:1 
-            ,  address:1  ,status:1 ,payment:1})
+            ,  address:1  ,status:1 ,payment:1 , createdAt:1})
             .sort({ createdAt: -1 })
             .populate("user", "userName  phoneNumber ");
 
