@@ -158,7 +158,7 @@ exports.rejectPayment = async (req, res) => {
             order.user.toString(),
               "تم رفض الدفع",
             //   message
-            "تم رفص الطلب الخاص بك والسبب" +rejectionReason
+            "تم رفص الطلب الخاص بك والسبب" +reason
         )
 
         res.status(200).json({
