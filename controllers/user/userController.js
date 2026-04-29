@@ -198,44 +198,55 @@ exports.changeRole = async (req, res) => {
 };
 
 
-exports.deactivateUserById=async(req,res)=>{
-      const { customerId } = req.params;
 
-     const user = await UserModel.findById(customerId,{active:1});
-       if (!user) {
+exports.deactivateUserById = async (req, res) => {
+  const { customerId } = req.params;
+
+  // check valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(customerId)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
+
+  try {
+    const user = await UserModel.findById(customerId);
+
+    if (!user) {
       return res.status(404).json({ message: "هذا المستخدم غير موجود!" });
     }
-    try{
-        user.active=!user.active;
-        await user.save();
 
-        if(user.active){
-          await createNotification(
-            user._id.toString(),
-           "تم فك الحظر من قبل الادمن",
-             "  نرجو منك عدم الأساءه في استخدام المتجر وشكرا  فريق ابو الدهب"
-         )
-        }else{
-                        await createNotification(
-            user._id.toString(),
-           "تم حظرك من قبل الادمن",
-             "تواصل مع المسئولين لكي يتم الغاء الحظر"
-         )
-        }
+    // toggle active
+    user.active = !user.active;
+    await user.save();
 
+    // notification (مش لازم يوقف العملية لو فشل)
+    try {
+      await createNotification(
+        user._id.toString(),
+        user.active 
+          ? "تم فك الحظر من قبل الادمن"
+          : "تم حظرك من قبل الادمن",
+        user.active
+          ? "نرجو منك عدم الإساءة في استخدام المتجر وشكراً"
+          : "تواصل مع المسؤولين لإلغاء الحظر"
+      );
+    } catch (notifyErr) {
+      console.error("Notification error:", notifyErr.message);
+    }
 
-        res.status(200).json({
-      message: "تم جلب المستخدم بنجاح",
-      user
+    res.status(200).json({
+      message: user.active 
+        ? "تم تفعيل المستخدم بنجاح"
+        : "تم تعطيل المستخدم بنجاح",
+      user,
     });
 
   } catch (err) {
     res.status(500).json({
-      message: "حدث خطأ أثناء جلب المستخدم: " + err.message
+      message: "حدث خطأ أثناء تعديل حالة المستخدم",
+      error: err.message,
     });
   }
-    
-}
+};
 
 // get profile
 exports.getProfile = async (req, res) => {
