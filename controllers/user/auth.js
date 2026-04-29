@@ -72,7 +72,7 @@ exports.login = async (req, res) => {
     }
 
     if(!user.active){
-        return res.status(401).json({ message: " هذا الحساب تم حذفه من قبل الأدمن تواصل مع المسئولين" });
+        return res.status(401).json({ message: " هذا الحساب تم حظره من قبل الأدمن تواصل مع المسئولين" });
     }
 
     
@@ -116,7 +116,7 @@ exports.phoneLogin = async (req, res) => {
       });
     }
     if(!user.active){
-        return res.status(401).json({ message: " هذا الحساب تم حذفه من قبل الأدمن تواصل مع المسئولين" });
+        return res.status(401).json({ message: " هذا الحساب تم حظره من قبل الأدمن تواصل مع المسئولين" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
