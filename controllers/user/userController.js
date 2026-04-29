@@ -203,10 +203,7 @@ exports.deactivateUserById = async (req, res) => {
   const { customerId } = req.params;
 
   // check valid ObjectId
-  if (!mongoose.Types.ObjectId.isValid(customerId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
-
+ 
   try {
     const user = await UserModel.findById(customerId);
 
