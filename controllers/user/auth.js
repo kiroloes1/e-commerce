@@ -29,6 +29,9 @@ exports.facebookAuth = async (req, res) => {
         provider: "facebook",
       });
     }
+        if(!user.active){
+        return res.status(401).json({ message: " هذا الحساب تم حذفه من قبل الأدمن تواصل مع المسئولين" });
+    }
 
 
     const token = jwt.sign(
@@ -68,6 +71,11 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
     }
 
+    if(!user.active){
+        return res.status(401).json({ message: " هذا الحساب تم حذفه من قبل الأدمن تواصل مع المسئولين" });
+    }
+
+    
     
     const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
@@ -106,6 +114,9 @@ exports.phoneLogin = async (req, res) => {
       return res.status(401).json({
         message: "رقم الهاتف أو كلمة المرور غير صحيحة",
       });
+    }
+    if(!user.active){
+        return res.status(401).json({ message: " هذا الحساب تم حذفه من قبل الأدمن تواصل مع المسئولين" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
