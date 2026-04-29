@@ -1,6 +1,7 @@
 const UserModel = require(`${__dirname}/../../models/user`);
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
 
 // update user
 exports.updateUser = async (req, res) => {
@@ -207,6 +208,12 @@ exports.deactivateUserById=async(req,res)=>{
     try{
         user.active=!user.active;
         await user.save();
+
+              await createNotification(
+            user._id.toString(),
+           "تم حظرك من قبل الادمن",
+             "تواصل مع المسئولين لكي يتم الغاء الحظر"
+         )
 
         res.status(200).json({
       message: "تم جلب المستخدم بنجاح",
