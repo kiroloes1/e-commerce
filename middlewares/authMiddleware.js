@@ -3,11 +3,11 @@ const User=require(`${__dirname}/../models/user`);
 exports.protected=async(req,res,next)=>{
     const authHeader=req.headers.authorization;;
     if(!authHeader || !authHeader.startsWith('Bearer')){
-        return res.status(401).json({message:"No token provided , you must be logged in"});
+        return res.status(401).json({message:"يجب عليك التسجيل اولا"});
     }
     const token=authHeader.split(" ")[1];
     if(!token){
-        return res.status(401).json({message:"No token provided , you must be logged in"});
+        return res.status(401).json({message:"يجب عليك التسجيل اولا"});
     }
     try{
      const decoded=jwt.verify(token,process.env.ACCESS_JWT_SECRET);
@@ -16,7 +16,11 @@ exports.protected=async(req,res,next)=>{
      }
      const user=await User.findById(decoded.userId).select('-password');
      if(!user){
-        return res.status(401).json({message:"The user belonging to this token no longer exists"});
+        return res.status(401).json({message:"هذا الحساب لم يعد موجودا "});
+     }
+     if(!user.active){
+        return res.status(401).json({message:"هذا الحساب تم حظره من قبل الأدمن "});
+
      }
      req.user=decoded;
      next();
