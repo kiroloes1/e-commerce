@@ -158,15 +158,26 @@ exports.signUp = async (req, res) => {
     if (!userName || !email || !password) {
       return res.status(400).json({ message: "الرجاء توفير جميع الحقول المطلوبة" });
     }
-  const existingUser = await User.findOne({
-  $or: [
-    { email },
-    { phoneNumber }
-  ]
-});
+  const existingUser = await User.findOne(
+ 
+    { email }
+  
+  
+);
     if (existingUser) {
-      return res.status(400).json({ message: "البريد الإلكتروني او رقم الهاتف مستخدم بالفعل" });
+      return res.status(400).json({ message: "البريد الإلكتروني  مستخدم بالفعل" });
     }
+  const existingUser2 = await User.findOne(
+ 
+    { phoneNumber }
+  
+  
+);
+
+    if (existingUser2) {
+      return res.status(400).json({ message: "   رقم الهاتف مستخدم بالفعل" });
+    }
+
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
