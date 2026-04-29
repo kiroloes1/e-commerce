@@ -209,11 +209,20 @@ exports.deactivateUserById=async(req,res)=>{
         user.active=!user.active;
         await user.save();
 
-              await createNotification(
+        if(user.active){
+          await createNotification(
+            user._id.toString(),
+           "تم فك الحظر من قبل الادمن",
+             "  نرجو منك عدم الأساءه في استخدام المتجر وشكرا  فريق ابو الدهب"
+         )
+        }else{
+                        await createNotification(
             user._id.toString(),
            "تم حظرك من قبل الادمن",
              "تواصل مع المسئولين لكي يتم الغاء الحظر"
          )
+        }
+
 
         res.status(200).json({
       message: "تم جلب المستخدم بنجاح",
