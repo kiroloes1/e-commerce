@@ -158,9 +158,14 @@ exports.signUp = async (req, res) => {
     if (!userName || !email || !password) {
       return res.status(400).json({ message: "الرجاء توفير جميع الحقول المطلوبة" });
     }
-    const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({
+  $or: [
+    { email },
+    { phoneNumber }
+  ]
+});
     if (existingUser) {
-      return res.status(400).json({ message: "البريد الإلكتروني مستخدم بالفعل" });
+      return res.status(400).json({ message: "البريد الإلكتروني او رقم الهاتف مستخدم بالفعل" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
