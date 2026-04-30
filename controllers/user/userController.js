@@ -107,6 +107,7 @@ exports.getUser = async (req, res) => {
         payment: 1,
         adminNote: 1,
         rejectionReason: 1,
+        status: 1,
       }
     );
 
