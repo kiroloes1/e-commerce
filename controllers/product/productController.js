@@ -118,6 +118,28 @@ exports.createProduct = async (req, res) => {
 };
 
 
+function validateProduct(product) {
+  const errors = [];
+
+  if (!product.code) errors.push("code is required");
+  if (!product.productName) errors.push("productName is required");
+  if (!product.unit_type) errors.push("unit_type is required");
+
+  if (product.unitsPerPackage == null || product.unitsPerPackage <= 0)
+    errors.push("unitsPerPackage must be > 0");
+
+  if (product.availableQuantity == null || product.availableQuantity < 0)
+    errors.push("availableQuantity must be >= 0");
+
+  if (product.packageSellingPrice == null || product.packageSellingPrice <= 0)
+    errors.push("packageSellingPrice must be > 0");
+
+  if (product.purchasePrice == null || product.purchasePrice <= 0)
+    errors.push("purchasePrice must be > 0");
+
+  return errors;
+}
+
 // create from excel sheet
 exports.createFromExcel = async (req, res) => {
   try {
@@ -129,15 +151,29 @@ exports.createFromExcel = async (req, res) => {
     const workbook = XLSX.read(file, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    
-    // Convert worksheet to JSON
+
     const productData = XLSX.utils.sheet_to_json(worksheet);
 
     let added = 0;
     let skipped = 0;
     let errors = [];
 
+    // Load existing codes once (optimization)
+    const existingProducts = await productModel.find({}, { code: 1 });
+    const existingCodes = new Set(existingProducts.map(p => p.code));
+
     for (const product of productData) {
+      const validationErrors = validateProduct(product);
+
+      if (validationErrors.length > 0) {
+        skipped++;
+        errors.push({
+          product: product.code || product.productName,
+          reason: validationErrors.join(", ")
+        });
+        continue;
+      }
+
       const {
         code,
         productName,
@@ -152,42 +188,30 @@ exports.createFromExcel = async (req, res) => {
         imageUrl
       } = product;
 
-      // Validate required fields
-      if (!code || !productName || !unit_type || !unitsPerPackage || !availableQuantity ||
-          !packageSellingPrice || !pieceSellingPrice || !purchasePrice) {
+      if (existingCodes.has(code)) {
         skipped++;
         errors.push({
-          product: code || productName || "Unknown",
-          reason: "هذه الحقول مطلوبه لهذا المنتج"
+          product: code,
+          reason: "هذا الكود موجود سابقا"
         });
         continue;
       }
 
-      // Check for duplicate code
-      const existing = await productModel.findOne({ code });
-      if (existing) {
-        skipped++;
-        errors.push({ product: code,  productName , reason: "هذا الكود موجود سابقا " });
-        continue;
-      }
-
-      // Save new product
       const newProduct = new productModel({
         code,
         productName,
         description,
         category,
         unit_type,
-        unitsPerPackage: Number(unitsPerPackage),
-        availableQuantity: Number(availableQuantity),
-        packageSellingPrice: Number(packageSellingPrice),
-        pieceSellingPrice: Number(pieceSellingPrice),
-        purchasePrice: Number(purchasePrice),
-        image:{
-          url:imageUrl,
-          publicId:""
+        unitsPerPackage: Number(unitsPerPackage || 0),
+        availableQuantity: Number(availableQuantity || 0),
+        packageSellingPrice: Number(packageSellingPrice || 0),
+        pieceSellingPrice: Number(pieceSellingPrice || 0),
+        purchasePrice: Number(purchasePrice || 0),
+        image: {
+          url: imageUrl,
+          publicId: ""
         }
-        
       });
 
       await newProduct.save();
@@ -198,11 +222,13 @@ exports.createFromExcel = async (req, res) => {
       message: "تم رفع المنتجات بنجاح",
       added,
       skipped,
-      errors,
+      errors
     });
 
   } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ اثناء رفع المنتجات: " + err.message });
+    return res.status(500).json({
+      message: "حدث خطأ اثناء رفع المنتجات: " + err.message
+    });
   }
 };
 
