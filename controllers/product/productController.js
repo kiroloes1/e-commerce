@@ -167,7 +167,7 @@ exports.createFromExcel = async (req, res) => {
       const existing = await productModel.findOne({ code });
       if (existing) {
         skipped++;
-        errors.push({ product: code, reason: "هذا الكود موجود سابقا " });
+        errors.push({ product: code,  productName , reason: "هذا الكود موجود سابقا " });
         continue;
       }
 
