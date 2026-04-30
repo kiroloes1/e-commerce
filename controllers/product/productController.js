@@ -152,16 +152,40 @@ exports.createFromExcel = async (req, res) => {
         imageUrl
       } = product;
 
-      // Validate required fields
-      if (!code || !productName || !unit_type || !unitsPerPackage || !availableQuantity ||
-          !packageSellingPrice || !pieceSellingPrice || !purchasePrice) {
-        skipped++;
-        errors.push({
-          product: code || productName || "Unknown",
-          reason: "هذه الحقول مطلوبه لهذا المنتج"
-        });
-        continue;
-      }
+const requiredFields = {
+  code: "كود المنتج",
+  productName: "اسم المنتج",
+  unit_type: "نوع الوحدة",
+  unitsPerPackage: "عدد الوحدات في العبوة",
+  availableQuantity: "الكمية المتاحة",
+  packageSellingPrice: "سعر بيع العبوة",
+  pieceSellingPrice: "سعر بيع القطعة",
+  purchasePrice: "سعر الشراء"
+};
+
+const missingFields = [];
+
+Object.keys(requiredFields).forEach((field) => {
+  if (
+    product[field] === undefined ||
+    product[field] === null ||
+    product[field] === "" ||
+    (typeof product[field] === "number" && isNaN(product[field]))
+  ) {
+    missingFields.push(requiredFields[field]);
+  }
+});
+
+if (missingFields.length > 0) {
+  skipped++;
+
+  errors.push({
+    product: product.code || product.productName || "Unknown",
+    reason: `المنتج ناقص البيانات التالية: ${missingFields.join("، ")}`
+  });
+
+  continue;
+}
 
       // Check for duplicate code
       const existing = await productModel.findOne({ code });
