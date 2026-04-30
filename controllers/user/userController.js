@@ -126,7 +126,8 @@ exports.getUser = async (req, res) => {
 
 
     // Cart
-    const cart = await cartModel.findOne({ user: customerId });
+    const cart = await cartModel.findOne({ user: customerId })
+         .populate("items.product","productName");
 
 
     // Cart Total
