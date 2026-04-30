@@ -117,6 +117,7 @@ exports.createProduct = async (req, res) => {
     }
 };
 
+
 // create from excel sheet
 exports.createFromExcel = async (req, res) => {
   try {
@@ -148,6 +149,7 @@ exports.createFromExcel = async (req, res) => {
         packageSellingPrice,
         pieceSellingPrice,
         purchasePrice,
+        imageUrl
       } = product;
 
       // Validate required fields
@@ -165,7 +167,7 @@ exports.createFromExcel = async (req, res) => {
       const existing = await productModel.findOne({ code });
       if (existing) {
         skipped++;
-        errors.push({ product: code, reason: "Duplicate code" });
+        errors.push({ product: code, reason: "هذا الكود موجود سابقا " });
         continue;
       }
 
@@ -181,6 +183,10 @@ exports.createFromExcel = async (req, res) => {
         packageSellingPrice: Number(packageSellingPrice),
         pieceSellingPrice: Number(pieceSellingPrice),
         purchasePrice: Number(purchasePrice),
+        image:{
+          url:imageUrl,
+          publicId:""
+        }
         
       });
 
