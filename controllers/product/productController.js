@@ -304,11 +304,14 @@ exports.getAllProductsClients = async (req, res) => {
     });
   }
 };
+
+
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const userId = req.query.userId; // أو req.user.id
+    const userId = req.query.userId; 
 
+    // 1. المنتجات الأساسية (Fallback)
     const products = await productModel.aggregate([
       {
         $match: {
@@ -319,44 +322,69 @@ exports.getAllProductsClientsLimit = async (req, res) => {
       { $limit: limit }
     ]);
 
-    if (userId) {
-      const userOrders = await OrderModel.find(
-        { user: userId },
-        { "items.product": 1 }
-      ).populate({
-        path: "items.product",
-        select: "category"
-      });
 
-      const categories = userOrders.flatMap(order =>
-        order.items
-          .map(item => item.product?.category)
-          .filter(Boolean)
-      );
-
-      const uniqueCategories = [...new Set(categories.map(c => c.toString()))];
-
-      const filterProduct = await productModel.find({
-        category: { $in: uniqueCategories },
-        totalUnits: { $gt: 0 }
-      });
-
+    if (!userId) {
       return res.status(200).json({
         message: "تم جلب المنتجات بنجاح",
-        data: filterProduct.length === 0 ? products : filterProduct,
-        length: filterProduct.length || products.length
+        data: products,
+        length: products.length
       });
     }
 
+
+    const userOrders = await OrderModel.find(
+      { user: userId },
+      { "items.product": 1 }
+    ).populate({
+      path: "items.product",
+      select: "category"
+    });
+
+
+    const categories = userOrders.flatMap(order =>
+      order.items
+        .map(item => item.product?.category)
+        .filter(Boolean)
+    );
+
+    const uniqueCategories = [...new Set(categories.map(c => c.toString()))];
+
+
+    if (uniqueCategories.length === 0) {
+      return res.status(200).json({
+        message: "No recommendations, returning default products",
+        data: products,
+        length: products.length
+      });
+    }
+
+
+    const filteredProducts = await productModel.find({
+      category: { $in: uniqueCategories },
+      totalUnits: { $gt: 0 }
+    }).limit(limit);
+
+    if (filteredProducts.length === 0) {
+      return res.status(200).json({
+        message: "No matching products, returning default",
+        data: products,
+        length: products.length
+      });
+    }
+
+
     return res.status(200).json({
       message: "تم جلب المنتجات بنجاح",
-      data: products,
-      length: products.length
+      data: filteredProducts,
+      length: filteredProducts.length
     });
 
   } catch (err) {
+    console.error(err);
+
     return res.status(500).json({
-      message: err.message
+      message: "Server Error",
+      error: err.message
     });
   }
 };
