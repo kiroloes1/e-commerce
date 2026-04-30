@@ -304,14 +304,11 @@ exports.getAllProductsClients = async (req, res) => {
     });
   }
 };
-
-// get product by limit  to clients (global login or not )
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const {userId}=req.body || null;
+    const userId = req.query.userId; // أو req.user.id
 
-    
     const products = await productModel.aggregate([
       {
         $match: {
@@ -319,40 +316,38 @@ exports.getAllProductsClientsLimit = async (req, res) => {
         }
       },
       ...basePipeline,
-      {
-        $limit: limit
-      }
+      { $limit: limit }
     ]);
 
+    if (userId) {
+      const userOrders = await OrderModel.find(
+        { user: userId },
+        { "items.product": 1 }
+      ).populate({
+        path: "items.product",
+        select: "category"
+      });
 
-if (userId) {
-  const userOrders = await OrderModel.find(
-    { user: userId },
-    { "items.product": 1 }
-  ).populate({
-    path: "items.product",
-    select: "category"
-  });
+      const categories = userOrders.flatMap(order =>
+        order.items
+          .map(item => item.product?.category)
+          .filter(Boolean)
+      );
 
-  const categories = userOrders.flatMap(order =>
-    order.items.map(item => item.product?.category)
-  );
+      const uniqueCategories = [...new Set(categories.map(c => c.toString()))];
 
-  const uniqueCategories = [...new Set(categories.map(c => c.toString()))];
-
-  const filterProduct = await productModel.find({
-    category: { $in: uniqueCategories }
-  });
-
-  console.log(filterProduct);
+      const filterProduct = await productModel.find({
+        category: { $in: uniqueCategories },
+        totalUnits: { $gt: 0 }
+      });
 
       return res.status(200).json({
-      message: "تم جلب المنتجات بنجاح",
-      data: filterProduct.length==0 ?products  :filterProduct,
-      length: filterProduct.length
-    });
+        message: "تم جلب المنتجات بنجاح",
+        data: filterProduct.length === 0 ? products : filterProduct,
+        length: filterProduct.length || products.length
+      });
+    }
 
-}
     return res.status(200).json({
       message: "تم جلب المنتجات بنجاح",
       data: products,
