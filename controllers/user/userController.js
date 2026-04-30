@@ -2,6 +2,12 @@ const UserModel = require(`${__dirname}/../../models/user`);
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
+const cartModel =require(`${__dirname}/../../models/cart`)
+const orderModel =require(`${__dirname}/../../models/order`)
+const reviewModel =require(`${__dirname}/../../models/review`)
+const notificationModel=require(`${__dirname}/../../models/notification`)
+const mongoose = require("mongoose");
+
 
 // update user
 exports.updateUser = async (req, res) => {
@@ -70,29 +76,93 @@ exports.deleteUser = async (req, res) => {
 };
 
 // get user by id
+
 exports.getUser = async (req, res) => {
   try {
     const { customerId } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
     const user = await UserModel.findById(customerId, "-password");
 
-  
     if (!user) {
       return res.status(404).json({ message: "هذا المستخدم غير موجود!" });
     }
 
+
+    // Reviews
+    const reviews = await reviewModel.find({ userId: customerId });
+
+
+    // Orders
+    const orders = await orderModel.find(
+      { user: customerId },
+      {
+        orderNumber: 1,
+        items: 1,
+        finalPrice: 1,
+        shippingPrice: 1,
+        payment: 1,
+        adminNote: 1,
+        rejectionReason: 1,
+      }
+    );
+
+
+    // Orders Stats
+    const orderStats = await orderModel.aggregate([
+      { $match: { user: new mongoose.Types.ObjectId(customerId) } },
+      {
+        $group: {
+          _id: "$user",
+          totalPrice: { $sum: "$finalPrice" },
+          totalOrders: { $sum: 1 },
+        },
+      },
+    ]);
+
+
+    // Cart
+    const cart = await cartModel.findOne({ user: customerId });
+
+
+    // Cart Total
+    const cartStats = await cartModel.aggregate([
+      { $match: { user: new mongoose.Types.ObjectId(customerId) } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$user",
+          totalItems: { $sum: "$items.quantity" },
+        },
+      },
+    ]);
+
+
+    // Notifications
+    const notifications = await notificationModel.find({ user: customerId });
+    // Response
+
     res.status(200).json({
       message: "تم جلب المستخدم بنجاح",
-      user
+      user,
+      reviews,
+      orders,
+      orderStats: orderStats[0] || { totalPrice: 0, totalOrders: 0 },
+      cart,
+      cartStats: cartStats[0] || { totalItems: 0 },
+      notifications,
     });
 
   } catch (err) {
     res.status(500).json({
-      message: "حدث خطأ أثناء جلب المستخدم: " + err.message
+      message: "حدث خطأ أثناء جلب المستخدم",
+      error: err.message,
     });
   }
 };
-
 
 // get all users
 exports.getUsers = async (req, res) => {
@@ -111,6 +181,7 @@ exports.getUsers = async (req, res) => {
     });
   }
 };
+
 
 // get all admin
 exports.getAllAdmin = async (req, res) => {
