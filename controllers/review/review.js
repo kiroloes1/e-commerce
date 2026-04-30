@@ -114,8 +114,7 @@ exports.updateReview = async (req, res) => {
             { _id: reviewId, userId },
             { rating, comment },
             { new: true, runValidators: true }
-                ).populate('userId', 'userName');
-
+        ).populate('userId', 'userName');
 
         if (!review) {
             return res.status(404).json({
@@ -134,12 +133,13 @@ exports.updateReview = async (req, res) => {
     }
 };
 
+
 exports.getReviews=async(req,res)=>{
       try {
         const reviews = await ReviewModel.find().populate('productId', 'productName' ).populate('userId', 'userName').limit(50);   
         return res.status(200).json({
             data: reviews
-        });
+        }).sort({ createdAt: -1 });
     } catch (err) {
         return res.status(500).json({
             message: "Server error",
@@ -147,8 +147,6 @@ exports.getReviews=async(req,res)=>{
         });
     }  
 }
-
-
 
 // best reviews 
 exports.getBestReviews = async (req, res) => {
@@ -162,5 +160,5 @@ exports.getBestReviews = async (req, res) => {
             message: "Server error",
             error: err.message
         });
-    }};
+}};
 
