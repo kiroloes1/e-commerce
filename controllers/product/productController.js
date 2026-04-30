@@ -239,13 +239,12 @@ exports.getAllProducts = async (req, res) => {
 };
 
 
-
 // GET  product  to admin
 exports.getProductByIdAdmin = async (req, res) => {
   try {
-    const { id } = req.params;
+     const { id } = req.params;
 
-     const products = await productModel.aggregate([
+     const product = await productModel.aggregate([
       {
           $match: {
           _id: new mongoose.Types.ObjectId(id)
@@ -265,7 +264,7 @@ exports.getProductByIdAdmin = async (req, res) => {
         }
       }
     ]);
-
+    
 
     if (product.length === 0) {
       return res.status(404).json({
@@ -310,7 +309,7 @@ exports.getAllProductsClients = async (req, res) => {
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const {userId}=req.query || null;
+    const {userId}=req.body || null;
 
     
     const products = await productModel.aggregate([
@@ -349,7 +348,7 @@ if (userId) {
 
       return res.status(200).json({
       message: "تم جلب المنتجات بنجاح",
-      data: filterProduct,
+      data: filterProduct.length==0 ?products  :filterProduct,
       length: filterProduct.length
     });
 
@@ -651,6 +650,7 @@ exports.updateProduct = async (req, res) => {
     if (updateData.purchasePrice !== undefined) {
       updateData.purchasePrice = Number(updateData.purchasePrice);
     }
+
 
     // Calculate totalUnits if relevant fields are updated
     if (updateData.availableQuantity !== undefined || updateData.unitsPerPackage !== undefined) {
