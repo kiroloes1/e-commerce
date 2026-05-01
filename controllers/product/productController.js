@@ -118,66 +118,86 @@ exports.createProduct = async (req, res) => {
 };
 
 
-const XLSX = require("xlsx");
-const fs = require("fs");
-
+// create from excel sheet
 exports.createFromExcel = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // بما أنك استخدمت diskStorage، نقرأ من المسار
-    const workbook = XLSX.readFile(req.file.path);
+    const file = req.file.buffer;
+    const workbook = XLSX.read(file, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert worksheet to JSON
     const productData = XLSX.utils.sheet_to_json(worksheet);
 
     let added = 0;
     let skipped = 0;
     let errors = [];
-    const productsToInsert = [];
-
-    // 1. جلب كل الأكواد الموجودة في قاعدة البيانات مرة واحدة فقط للمقارنة في الذاكرة
-    const existingCodes = new Set(
-      (await productModel.find({}, "code")).map((p) => p.code)
-    );
 
     for (const product of productData) {
       const {
-        code, productName, description, category, unit_type,
-        unitsPerPackage, availableQuantity, packageSellingPrice,
-        pieceSellingPrice, purchasePrice, imageUrl
+        code,
+        productName,
+        description,
+        category,
+        unit_type,
+        unitsPerPackage,
+        availableQuantity,
+        packageSellingPrice,
+        pieceSellingPrice,
+        purchasePrice,
+        imageUrl
       } = product;
 
-      // التحقق من البيانات الناقصة (نفس منطقك)
-      const requiredFields = {
-        code: "كود المنتج", productName: "اسم المنتج", unit_type: "نوع الوحدة",
-        unitsPerPackage: "عدد الوحدات في العبوة", availableQuantity: "الكمية المتاحة",
-        packageSellingPrice: "سعر بيع العبوة", pieceSellingPrice: "سعر بيع القطعة",
-        purchasePrice: "سعر الشراء"
-      };
+const requiredFields = {
+  code: "كود المنتج",
+  productName: "اسم المنتج",
+  unit_type: "نوع الوحدة",
+  unitsPerPackage: "عدد الوحدات في العبوة",
+  availableQuantity: "الكمية المتاحة",
+  packageSellingPrice: "سعر بيع العبوة",
+  pieceSellingPrice: "سعر بيع القطعة",
+  purchasePrice: "سعر الشراء"
+};
 
-      const missingFields = Object.keys(requiredFields).filter(field => 
-        product[field] === undefined || product[field] === null || product[field] === ""
-      );
+const missingFields = [];
 
-      if (missingFields.length > 0) {
+Object.keys(requiredFields).forEach((field) => {
+  if (
+    product[field] === undefined ||
+    product[field] === null ||
+    product[field] === "" ||
+    (typeof product[field] === "number" && isNaN(product[field]))
+  ) {
+    missingFields.push(requiredFields[field]);
+  }
+});
+
+if (missingFields.length > 0) {
+  skipped++;
+
+  errors.push({
+    product: product.code || product.productName || "Unknown",
+    reason: `المنتج ناقص البيانات التالية: ${missingFields.join("، ")}`
+  });
+
+  continue;
+}
+
+      // Check for duplicate code
+      const existing = await productModel.findOne({ code });
+      if (existing) {
         skipped++;
-        errors.push({ product: code || "Unknown", reason: `ناقص: ${missingFields.join("، ")}` });
+        errors.push({ product: code, reason: "هذا الكود موجود سابقا " });
         continue;
       }
 
-      // 2. التحقق من التكرار في الذاكرة (سريع جداً)
-      if (existingCodes.has(String(code))) {
-        skipped++;
-        errors.push({ product: code, reason: "هذا الكود موجود سابقاً" });
-        continue;
-      }
-
-      // إضافة المنتج للمصفوفة بدلاً من حفظه فوراً
-      productsToInsert.push({
-        code: String(code),
+      // Save new product
+      const newProduct = new productModel({
+        code,
         productName,
         description,
         category,
@@ -187,35 +207,29 @@ exports.createFromExcel = async (req, res) => {
         packageSellingPrice: Number(packageSellingPrice),
         pieceSellingPrice: Number(pieceSellingPrice),
         purchasePrice: Number(purchasePrice),
-        image: { url: imageUrl, publicId: "" }
+        image:{
+          url:imageUrl,
+          publicId:""
+        }
+        
       });
 
-      // منع التكرار داخل نفس ملف الاكسل
-      existingCodes.add(String(code));
+      await newProduct.save();
+      added++;
     }
-
-    // 3. تنفيذ الحفظ الجماعي (Bulk Insert) مرة واحدة فقط
-    if (productsToInsert.length > 0) {
-      await productModel.insertMany(productsToInsert, { ordered: false });
-      added = productsToInsert.length;
-    }
-
-    // 4. تنظيف السيرفر من ملف الاكسل بعد المعالجة
-    if (req.file.path) fs.unlinkSync(req.file.path);
 
     return res.status(200).json({
-      message: "تمت العملية بنجاح",
+      message: "تم رفع المنتجات بنجاح",
       added,
       skipped,
-      errors: errors.length > 10 ? errors.slice(0, 10) : errors, // نرسل أول 10 أخطاء فقط لتصغير حجم الـ Res
+      errors,
     });
 
   } catch (err) {
-    if (req.file && req.file.path) fs.unlinkSync(req.file.path);
-    console.error(err);
-    return res.status(500).json({ message: "خطأ أثناء المعالجة: " + err.message });
+    return res.status(500).json({ message: "حدث خطأ اثناء رفع المنتجات: " + err.message });
   }
 };
+
 
 //   ############    get product #############
 
