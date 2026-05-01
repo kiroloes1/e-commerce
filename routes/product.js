@@ -6,8 +6,8 @@ const productController = require(`${__dirname}/../controllers/product/productCo
 const upload = require(`${__dirname}/../config/multerConfig`);
 
 const multer  =require('multer');
-const strong=multer.memoryStorage();
-const uploads=multer({strong:strong})
+const storage=multer.memoryStorage();
+const uploads=multer({storage:storage})
 
 
 //  Get all products clients
