@@ -118,7 +118,6 @@ exports.createProduct = async (req, res) => {
 };
 
 
-// create from excel sheet
 exports.createFromExcel = async (req, res) => {
   try {
     if (!req.file) {
@@ -129,14 +128,24 @@ exports.createFromExcel = async (req, res) => {
     const workbook = XLSX.read(file, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    
-    // Convert worksheet to JSON
+
     const productData = XLSX.utils.sheet_to_json(worksheet);
 
     let added = 0;
     let skipped = 0;
     let errors = [];
-    const pushProducts=[];
+
+    const pushProducts = [];
+    const seenCodes = new Set(); // للتكرار داخل Excel
+
+    // ✅ 1. هات كل الأكواد مرة واحدة
+    const allCodes = productData.map(p => p.code);
+    const existingProducts = await productModel.find({
+      code: { $in: allCodes }
+    });
+    const existingCodes = new Set(existingProducts.map(p => p.code));
+
+    // ✅ 2. loop خفيف جدًا بدون queries
     for (const product of productData) {
       const {
         code,
@@ -152,52 +161,56 @@ exports.createFromExcel = async (req, res) => {
         imageUrl
       } = product;
 
-const requiredFields = {
-  code: "كود المنتج",
-  productName: "اسم المنتج",
-  unit_type: "نوع الوحدة",
-  unitsPerPackage: "عدد الوحدات في العبوة",
-  availableQuantity: "الكمية المتاحة",
-  packageSellingPrice: "سعر بيع العبوة",
-  pieceSellingPrice: "سعر بيع القطعة",
-  purchasePrice: "سعر الشراء"
-};
+      // check missing
+      const requiredFields = {
+        code: "كود المنتج",
+        productName: "اسم المنتج",
+        unit_type: "نوع الوحدة",
+        unitsPerPackage: "عدد الوحدات في العبوة",
+        availableQuantity: "الكمية المتاحة",
+        packageSellingPrice: "سعر بيع العبوة",
+        pieceSellingPrice: "سعر بيع القطعة",
+        purchasePrice: "سعر الشراء"
+      };
 
-const missingFields = [];
+      const missingFields = [];
 
+      Object.keys(requiredFields).forEach((field) => {
+        if (
+          product[field] === undefined ||
+          product[field] === null ||
+          product[field] === "" ||
+          (typeof product[field] === "number" && isNaN(product[field]))
+        ) {
+          missingFields.push(requiredFields[field]);
+        }
+      });
 
-Object.keys(requiredFields).forEach((field) => {
-  if (
-    product[field] === undefined ||
-    product[field] === null ||
-    product[field] === "" ||
-    (typeof product[field] === "number" && isNaN(product[field]))
-  ) {
-    missingFields.push(requiredFields[field]);
-  }
-});
-
-if (missingFields.length > 0) {
-  skipped++;
-
-  errors.push({
-    product: product.code || product.productName || "Unknown",
-    reason: `المنتج ناقص البيانات التالية: ${missingFields.join("، ")}`
-  });
-
-  continue;
-}
-
-      // Check for duplicate code
-      const existing = await productModel.findOne({ code });
-      if (existing) {
+      if (missingFields.length > 0) {
         skipped++;
-        errors.push({ product: code, reason: "هذا الكود موجود سابقا " });
+        errors.push({
+          product: code || productName || "Unknown",
+          reason: `ناقص: ${missingFields.join("، ")}`
+        });
         continue;
       }
 
-      // Save new product
-      const newProduct = ({
+      // ✅ duplicate داخل Excel
+      if (seenCodes.has(code)) {
+        skipped++;
+        errors.push({ product: code, reason: "مكرر داخل ملف Excel" });
+        continue;
+      }
+      seenCodes.add(code);
+
+      // ✅ duplicate في DB
+      if (existingCodes.has(code)) {
+        skipped++;
+        errors.push({ product: code, reason: "موجود مسبقًا" });
+        continue;
+      }
+
+      pushProducts.push({
         code,
         productName,
         description,
@@ -208,21 +221,30 @@ if (missingFields.length > 0) {
         packageSellingPrice: Number(packageSellingPrice),
         pieceSellingPrice: Number(pieceSellingPrice),
         purchasePrice: Number(purchasePrice),
-        image:{
-          url:imageUrl,
-          publicId:""
+        image: {
+          url: imageUrl,
+          publicId: ""
         }
-        
       });
-
-      pushProducts.push(newProduct)
-
     }
 
-  
-    if(pushProducts.length>0){
-      const result=  await productModel.insertMany(pushProducts)
-      added=pushProducts.length
+    // ✅ 3. insert على دفعات (مهم جدًا لـ Vercel)
+    const chunkSize = 100;
+
+    for (let i = 0; i < pushProducts.length; i += chunkSize) {
+      const chunk = pushProducts.slice(i, i + chunkSize);
+
+      try {
+        const result = await productModel.insertMany(chunk, { ordered: false });
+        added += result.length;
+      } catch (err) {
+        if (err.code === 11000) {
+          added += err.result?.nInserted || 0;
+          skipped += chunk.length - (err.result?.nInserted || 0);
+        } else {
+          throw err;
+        }
+      }
     }
 
     return res.status(200).json({
@@ -233,7 +255,11 @@ if (missingFields.length > 0) {
     });
 
   } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ اثناء رفع المنتجات: " + err.message });
+    console.error(err);
+    return res.status(500).json({
+      message: "حدث خطأ اثناء رفع المنتجات",
+      error: err.message
+    });
   }
 };
 
