@@ -3,6 +3,8 @@ const  User=require(`${__dirname}/../../models/user`)
 const mongoose = require("mongoose");
 exports.getSalesReport = async (req, res) => {
   try {
+        const { from, to, status, userId } = req.query;
+
 
     const matchFilter = {};
 
