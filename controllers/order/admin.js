@@ -7,7 +7,7 @@ exports.viewAllOrders = async (req, res) => {
     try {
         const orders = await Order.find({},{orderNumber:1,user:1,finalPrice:1 
             ,customerName:1 ,phone:1 
-            ,  address:1  ,status:1 ,payment:1 , createdAt:1})
+            ,  address:1  ,status:1 ,payment:1})
             .sort({ createdAt: -1 })
             .populate("user", "userName  phoneNumber ");
 
@@ -150,8 +150,6 @@ exports.rejectPayment = async (req, res) => {
         }
 
         order.payment.status = "rejected";
-        order.status = "cancelled";
-     
         order.rejectionReason = reason || "No reason provided";
 
         await order.save();
@@ -160,7 +158,7 @@ exports.rejectPayment = async (req, res) => {
             order.user.toString(),
               "تم رفض الدفع",
             //   message
-            "تم رفص الطلب الخاص بك والسبب" +reason
+            "تم رفص الطلب الخاص بك والسبب" +rejectionReason
         )
 
         res.status(200).json({
