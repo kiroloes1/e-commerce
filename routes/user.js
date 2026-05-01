@@ -35,6 +35,7 @@ router.use(role("superadmin" ,"admin"));
 router.patch('/deactivateUserById/:customerId', userController.deactivateUserById);
 router.delete('/deleteUser/:customerId', userController.deleteUser);
 router.get('/getUser/:customerId', userController.getUser);
+router.get('/getUsers', userController.getUsers);
 
 
 
@@ -43,8 +44,6 @@ router.get('/getAllAdmin', userController.getAllAdmin);
 router.post('/createAdmin', userController.createAdmin);
 router.patch('/changeRole', userController.changeRole);
 
-router.use(role("admin"));
-router.get('/getUsers', userController.getUsers);
 
 
 
