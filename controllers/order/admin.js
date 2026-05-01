@@ -149,7 +149,7 @@ exports.rejectPayment = async (req, res) => {
             });
         }
 
-        order.payment.status = "cancelled";
+        order.payment.status = "rejected";
         order.rejectionReason = reason || "No reason provided";
 
         await order.save();
