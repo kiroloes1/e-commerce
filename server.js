@@ -13,10 +13,7 @@ app.use(cors({
   credentials: true
 }));
 
-const fs = require('fs');
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
-}
+
 
 const server =require("http").createServer(app);
 const { init } = require(`${__dirname}/sockets/socket`);
@@ -42,8 +39,8 @@ config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.i
 
 
 app.use(bodyParser.json());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// app.use(express.json({ limit: '50mb' }));
+// app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
