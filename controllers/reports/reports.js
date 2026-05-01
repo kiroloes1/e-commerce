@@ -3,34 +3,33 @@ const  User=require(`${__dirname}/../../models/user`)
 const mongoose = require("mongoose");
 exports.getSalesReport = async (req, res) => {
   try {
-        const { from, to, status, userId } = req.query;
-
+    const { from, to, status, userId } = req.query;
 
     const matchFilter = {};
 
+    // default: exclude cancelled
+    matchFilter.status = { $ne: "cancelled" };
 
-        matchFilter.status = { $ne: "cancelled" };
+    // date filter
+    if (from || to) {
+      matchFilter.createdAt = {};
+      if (from) matchFilter.createdAt.$gte = new Date(from);
+      if (to) matchFilter.createdAt.$lte = new Date(to);
+    }
 
-        // date
-        if (from || to) {
-        matchFilter.createdAt = {};
-        if (from) matchFilter.createdAt.$gte = new Date(from);
-        if (to) matchFilter.createdAt.$lte = new Date(to);
-        }
+    // status filter
+    if (status && status !== "all") {
+      matchFilter.status = status;
+    }
 
-        // status
-        if (status && status !== "all") {
-        matchFilter.status = status;
-        }
+    // user filter
+    if (userId) {
+      matchFilter.user = new mongoose.Types.ObjectId(userId);
+    }
 
-        // user
-        if (userId) {
-        matchFilter.user = new mongoose.Types.ObjectId(userId);
-        }
-
-
+    // ---------------- SUMMARY ----------------
     const report = await Order.aggregate([
-     { $match: matchFilter },
+      { $match: matchFilter },
       { $unwind: "$items" },
 
       {
@@ -41,7 +40,6 @@ exports.getSalesReport = async (req, res) => {
           as: "productData"
         }
       },
-
       { $unwind: "$productData" },
 
       {
@@ -62,23 +60,13 @@ exports.getSalesReport = async (req, res) => {
               { $eq: ["$items.unit_type", "قطعة"] },
               {
                 $multiply: [
-                  {
-                    $subtract: [
-                      "$items.price",
-                      "$costPerUnit"
-                    ]
-                  },
+                  { $subtract: ["$items.price", "$costPerUnit"] },
                   "$items.quantity"
                 ]
               },
               {
                 $multiply: [
-                  {
-                    $subtract: [
-                      "$items.price",
-                      "$productData.purchasePrice"
-                    ]
-                  },
+                  { $subtract: ["$items.price", "$productData.purchasePrice"] },
                   "$items.quantity"
                 ]
               }
@@ -107,109 +95,99 @@ exports.getSalesReport = async (req, res) => {
       }
     ]);
 
+    // ---------------- UNIT STATS ----------------
     const unitStats = await Order.aggregate([
-  { $unwind: "$items" },
+      { $match: matchFilter },   // 👈 مهم جدًا
+      { $unwind: "$items" },
 
-  {
-    $group: {
-      _id: "$items.unit_type",
-      total: { $sum: "$items.quantity" }
-    }
-  }
-]);
-
-const productProfit = await Order.aggregate([
-  { $unwind: "$items" },
-
-  {
-    $lookup: {
-      from: "products",
-      localField: "items.product",
-      foreignField: "_id",
-      as: "productData"
-    }
-  },
-
-  { $unwind: "$productData" },
-
-  {
-    $addFields: {
-      costPerUnit: {
-        $divide: [
-          "$productData.purchasePrice",
-          "$productData.unitsPerPackage"
-        ]
+      {
+        $group: {
+          _id: "$items.unit_type",
+          total: { $sum: "$items.quantity" }
+        }
       }
-    }
-  },
+    ]);
 
-  {
-    $addFields: {
-      profit: {
-        $cond: [
-          { $eq: ["$items.unit_type", "قطعة"] },
-          {
-            $multiply: [
-              {
-                $subtract: [
-                  "$items.price",
-                  "$costPerUnit"
-                ]
-              },
-              "$items.quantity"
-            ]
-          },
-          {
-            $multiply: [
-              {
-                $subtract: [
-                  "$items.price",
-                  "$productData.purchasePrice"
-                ]
-              },
-              "$items.quantity"
+    // ---------------- PRODUCT PROFIT ----------------
+    const productProfit = await Order.aggregate([
+      { $match: matchFilter },   // 👈 مهم جدًا
+      { $unwind: "$items" },
+
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "productData"
+        }
+      },
+      { $unwind: "$productData" },
+
+      {
+        $addFields: {
+          costPerUnit: {
+            $divide: [
+              "$productData.purchasePrice",
+              "$productData.unitsPerPackage"
             ]
           }
-        ]
-      }
-    }
-  },
+        }
+      },
 
-  {
-    $group: {
-      _id: "$items.product",
-      productName: { $first: "$items.productName" },
-      totalSold: { $sum: "$items.quantity" },
-      totalRevenue: { $sum: "$items.subtotal" },
-      totalProfit: { $sum: "$profit" }
-    }
-  },
+      {
+        $addFields: {
+          profit: {
+            $cond: [
+              { $eq: ["$items.unit_type", "قطعة"] },
+              {
+                $multiply: [
+                  { $subtract: ["$items.price", "$costPerUnit"] },
+                  "$items.quantity"
+                ]
+              },
+              {
+                $multiply: [
+                  { $subtract: ["$items.price", "$productData.purchasePrice"] },
+                  "$items.quantity"
+                ]
+              }
+            ]
+          }
+        }
+      },
 
-  { $sort: { totalProfit: -1 } }
-]);
+      {
+        $group: {
+          _id: "$items.product",
+          productName: { $first: "$items.productName" },
+          totalSold: { $sum: "$items.quantity" },
+          totalRevenue: { $sum: "$items.subtotal" },
+          totalProfit: { $sum: "$profit" }
+        }
+      },
+
+      { $sort: { totalProfit: -1 } }
+    ]);
 
     res.status(200).json({
-  success: "تم جلب التقارير بنجاح",
+      success: true,
+      summary: report[0] || {
+        totalOrders: 0,
+        totalSales: 0,
+        totalProfit: 0,
+        totalItems: 0
+      },
+      unitStats: unitStats.reduce((acc, item) => {
+        acc[item._id] = item.total;
+        return acc;
+      }, {}),
+      products: productProfit
+    });
 
-  summary: report[0] || {
-    totalOrders: 0,
-    totalSales: 0,
-    totalProfit: 0,
-    totalItems: 0
-  },
-
-  unitStats: unitStats.reduce((acc, item) => {
-    acc[item._id] = item.total;
-    return acc;
-  }, {}),
-
-  products: productProfit
-});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
 exports.getUserName=async(req,res)=>{
     try{
         const users=await User.find({role:"customer"},{userName:1 ,_id:1});
