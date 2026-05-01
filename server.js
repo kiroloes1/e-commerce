@@ -13,6 +13,10 @@ app.use(cors({
   credentials: true
 }));
 
+const fs = require('fs');
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
 
 const server =require("http").createServer(app);
 const { init } = require(`${__dirname}/sockets/socket`);
