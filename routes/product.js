@@ -9,7 +9,10 @@ const upload = require(`${__dirname}/../config/multerConfig`);
 const multer = require('multer');
 
 const storage = multer.memoryStorage(); 
-const upload = multer({ storage: storage });
+const uploads = multer({
+  storage: storage, // تأكد انك غيرتها من strong لـ storage
+  limits: { fileSize: 10 * 1024 * 1024 } // حد أقصى 10 ميجابايت مثلاً
+});
 
 
 //  Get all products clients
