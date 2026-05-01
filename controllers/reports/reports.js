@@ -1,5 +1,6 @@
 const Order = require(`${__dirname}/../../models/order`);
 const  User=require(`${__dirname}/../../models/user`)
+const mongoose = require("mongoose");
 exports.getSalesReport = async (req, res) => {
   try {
 
@@ -27,12 +28,7 @@ exports.getSalesReport = async (req, res) => {
 
 
     const report = await Order.aggregate([
-      {
-        $match: {
-          status: { $ne: "cancelled" } 
-        }
-      },
-
+     { $match: matchFilter },
       { $unwind: "$items" },
 
       {
