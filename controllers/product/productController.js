@@ -118,86 +118,66 @@ exports.createProduct = async (req, res) => {
 };
 
 
-// create from excel sheet
+const XLSX = require("xlsx");
+const fs = require("fs");
+
 exports.createFromExcel = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const file = req.file.buffer;
-    const workbook = XLSX.read(file, { type: "buffer" });
+    // بما أنك استخدمت diskStorage، نقرأ من المسار
+    const workbook = XLSX.readFile(req.file.path);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    
-    // Convert worksheet to JSON
     const productData = XLSX.utils.sheet_to_json(worksheet);
 
     let added = 0;
     let skipped = 0;
     let errors = [];
+    const productsToInsert = [];
+
+    // 1. جلب كل الأكواد الموجودة في قاعدة البيانات مرة واحدة فقط للمقارنة في الذاكرة
+    const existingCodes = new Set(
+      (await productModel.find({}, "code")).map((p) => p.code)
+    );
 
     for (const product of productData) {
       const {
-        code,
-        productName,
-        description,
-        category,
-        unit_type,
-        unitsPerPackage,
-        availableQuantity,
-        packageSellingPrice,
-        pieceSellingPrice,
-        purchasePrice,
-        imageUrl
+        code, productName, description, category, unit_type,
+        unitsPerPackage, availableQuantity, packageSellingPrice,
+        pieceSellingPrice, purchasePrice, imageUrl
       } = product;
 
-const requiredFields = {
-  code: "كود المنتج",
-  productName: "اسم المنتج",
-  unit_type: "نوع الوحدة",
-  unitsPerPackage: "عدد الوحدات في العبوة",
-  availableQuantity: "الكمية المتاحة",
-  packageSellingPrice: "سعر بيع العبوة",
-  pieceSellingPrice: "سعر بيع القطعة",
-  purchasePrice: "سعر الشراء"
-};
+      // التحقق من البيانات الناقصة (نفس منطقك)
+      const requiredFields = {
+        code: "كود المنتج", productName: "اسم المنتج", unit_type: "نوع الوحدة",
+        unitsPerPackage: "عدد الوحدات في العبوة", availableQuantity: "الكمية المتاحة",
+        packageSellingPrice: "سعر بيع العبوة", pieceSellingPrice: "سعر بيع القطعة",
+        purchasePrice: "سعر الشراء"
+      };
 
-const missingFields = [];
+      const missingFields = Object.keys(requiredFields).filter(field => 
+        product[field] === undefined || product[field] === null || product[field] === ""
+      );
 
-Object.keys(requiredFields).forEach((field) => {
-  if (
-    product[field] === undefined ||
-    product[field] === null ||
-    product[field] === "" ||
-    (typeof product[field] === "number" && isNaN(product[field]))
-  ) {
-    missingFields.push(requiredFields[field]);
-  }
-});
-
-if (missingFields.length > 0) {
-  skipped++;
-
-  errors.push({
-    product: product.code || product.productName || "Unknown",
-    reason: `المنتج ناقص البيانات التالية: ${missingFields.join("، ")}`
-  });
-
-  continue;
-}
-
-      // Check for duplicate code
-      const existing = await productModel.findOne({ code });
-      if (existing) {
+      if (missingFields.length > 0) {
         skipped++;
-        errors.push({ product: code, reason: "هذا الكود موجود سابقا " });
+        errors.push({ product: code || "Unknown", reason: `ناقص: ${missingFields.join("، ")}` });
         continue;
       }
 
-      // Save new product
-      const newProduct = new productModel({
-        code,
+      // 2. التحقق من التكرار في الذاكرة (سريع جداً)
+      if (existingCodes.has(String(code))) {
+        skipped++;
+        errors.push({ product: code, reason: "هذا الكود موجود سابقاً" });
+        continue;
+      }
+
+      // إضافة المنتج للمصفوفة بدلاً من حفظه فوراً
+      productsToInsert.push({
+        code: String(code),
         productName,
         description,
         category,
@@ -207,29 +187,35 @@ if (missingFields.length > 0) {
         packageSellingPrice: Number(packageSellingPrice),
         pieceSellingPrice: Number(pieceSellingPrice),
         purchasePrice: Number(purchasePrice),
-        image:{
-          url:imageUrl,
-          publicId:""
-        }
-        
+        image: { url: imageUrl, publicId: "" }
       });
 
-      await newProduct.save();
-      added++;
+      // منع التكرار داخل نفس ملف الاكسل
+      existingCodes.add(String(code));
     }
 
+    // 3. تنفيذ الحفظ الجماعي (Bulk Insert) مرة واحدة فقط
+    if (productsToInsert.length > 0) {
+      await productModel.insertMany(productsToInsert, { ordered: false });
+      added = productsToInsert.length;
+    }
+
+    // 4. تنظيف السيرفر من ملف الاكسل بعد المعالجة
+    if (req.file.path) fs.unlinkSync(req.file.path);
+
     return res.status(200).json({
-      message: "تم رفع المنتجات بنجاح",
+      message: "تمت العملية بنجاح",
       added,
       skipped,
-      errors,
+      errors: errors.length > 10 ? errors.slice(0, 10) : errors, // نرسل أول 10 أخطاء فقط لتصغير حجم الـ Res
     });
 
   } catch (err) {
-    return res.status(500).json({ message: "حدث خطأ اثناء رفع المنتجات: " + err.message });
+    if (req.file && req.file.path) fs.unlinkSync(req.file.path);
+    console.error(err);
+    return res.status(500).json({ message: "خطأ أثناء المعالجة: " + err.message });
   }
 };
-
 
 //   ############    get product #############
 
