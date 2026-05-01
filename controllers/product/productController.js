@@ -136,7 +136,7 @@ exports.createFromExcel = async (req, res) => {
     let added = 0;
     let skipped = 0;
     let errors = [];
-
+    const pushProducts=[];
     for (const product of productData) {
       const {
         code,
@@ -164,6 +164,7 @@ const requiredFields = {
 };
 
 const missingFields = [];
+
 
 Object.keys(requiredFields).forEach((field) => {
   if (
@@ -196,7 +197,7 @@ if (missingFields.length > 0) {
       }
 
       // Save new product
-      const newProduct = new productModel({
+      const newProduct = ({
         code,
         productName,
         description,
@@ -214,8 +215,14 @@ if (missingFields.length > 0) {
         
       });
 
-      await newProduct.save();
-      added++;
+      pushProducts.push(newProduct)
+
+    }
+
+  
+    if(pushProducts.length>0){
+      const result=  await productModel.insertMany(pushProducts)
+      added=pushProducts.length
     }
 
     return res.status(200).json({
