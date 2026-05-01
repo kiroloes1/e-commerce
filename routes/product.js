@@ -8,7 +8,10 @@ const upload = require(`${__dirname}/../config/multerConfig`);
 
 const multer = require('multer');
 
-const storage = multer.memoryStorage(); 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname)
+});
 const uploads = multer({
   storage: storage, // تأكد انك غيرتها من strong لـ storage
   limits: { fileSize: 10 * 1024 * 1024 } // حد أقصى 10 ميجابايت مثلاً
