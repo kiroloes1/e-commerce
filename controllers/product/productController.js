@@ -372,21 +372,16 @@ exports.getAllProductsClients = async (req, res) => {
 exports.getAllProductsClientsLimit = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
-    const userId = req.query.userId; 
+    const userId = req.query.userId;
 
-    // 1. المنتجات الأساسية (Fallback)
-    const products = await productModel.aggregate([
-      {
-        $match: {
-          totalUnits: { $gt: 0 }
-        }
-      },
-      ...basePipeline,
-      { $limit: limit }
-    ]);
-
-
+    // 🟢 لو مفيش user → fallback مباشر
     if (!userId) {
+      const products = await productModel.aggregate([
+        { $match: { totalUnits: { $gt: 0 } } },
+        { $sample: { size: limit } }, // random
+        ...basePipeline
+      ]);
+
       return res.status(200).json({
         message: "تم جلب المنتجات بنجاح",
         data: products,
@@ -394,57 +389,76 @@ exports.getAllProductsClientsLimit = async (req, res) => {
       });
     }
 
-
+    // 🟢 هات categories + productIds بدون populate
     const userOrders = await OrderModel.find(
       { user: userId },
-      { "items.product": 1 }
-    ).populate({
-      path: "items.product",
-      select: "category"
-    });
-
-
-    const categories = userOrders.flatMap(order =>
-      order.items
-        .map(item => item.product?.category)
-        .filter(Boolean)
+      { "items.product": 1, "items.category": 1 }
     );
 
-    const uniqueCategories = [...new Set(categories.map(c => c.toString()))];
+    let categories = [];
+    let purchasedProducts = [];
 
+    userOrders.forEach(order => {
+      order.items.forEach(item => {
+        if (item.category) categories.push(item.category);
+        if (item.product) purchasedProducts.push(item.product.toString());
+      });
+    });
 
+    const uniqueCategories = [...new Set(categories)];
+    const purchasedSet = new Set(purchasedProducts);
+
+    // 🟡 لو مفيش history → fallback
     if (uniqueCategories.length === 0) {
+      const products = await productModel.aggregate([
+        { $match: { totalUnits: { $gt: 0 } } },
+        { $sample: { size: limit } },
+        ...basePipeline
+      ]);
+
       return res.status(200).json({
-        message: "No recommendations, returning default products",
+        message: "No recommendations, fallback",
         data: products,
         length: products.length
       });
     }
 
+    // 🟢 recommendation حقيقي
+    const recommended = await productModel.aggregate([
+      {
+        $match: {
+          category: { $in: uniqueCategories },
+          totalUnits: { $gt: 0 },
+          _id: { $nin: [...purchasedSet] } // استبعاد اللي اشتراه
+        }
+      },
+      { $sample: { size: limit } }, // random
+      ...basePipeline
+    ]);
 
-    const filteredProducts = await productModel.find({
-      category: { $in: uniqueCategories },
-      totalUnits: { $gt: 0 }
-    }).limit(limit);
+    // 🟡 fallback لو مفيش نتيجة
+    if (recommended.length === 0) {
+      const products = await productModel.aggregate([
+        { $match: { totalUnits: { $gt: 0 } } },
+        { $sample: { size: limit } },
+        ...basePipeline
+      ]);
 
-    if (filteredProducts.length === 0) {
       return res.status(200).json({
-        message: "No matching products, returning default",
+        message: "Fallback products",
         data: products,
         length: products.length
       });
     }
-
 
     return res.status(200).json({
       message: "تم جلب المنتجات بنجاح",
-      data: filteredProducts,
-      length: filteredProducts.length
+      data: recommended,
+      length: recommended.length
     });
 
   } catch (err) {
     console.error(err);
-
     return res.status(500).json({
       message: "Server Error",
       error: err.message
