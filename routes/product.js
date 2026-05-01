@@ -5,9 +5,11 @@ const {role}=require(`${__dirname}/../middlewares/authorization`)
 const productController = require(`${__dirname}/../controllers/product/productController`);
 const upload = require(`${__dirname}/../config/multerConfig`);
 
-const multer  =require('multer');
-const strong=multer.memoryStorage();
-const uploads=multer({strong:strong})
+
+const multer = require('multer');
+
+const storage = multer.memoryStorage(); 
+const upload = multer({ storage: storage });
 
 
 //  Get all products clients
