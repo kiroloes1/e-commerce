@@ -1,37 +1,40 @@
 const Order = require(`${__dirname}/../../models/order`);
 const  User=require(`${__dirname}/../../models/user`)
-exports.getSalesReport = async (req, res) => {
+const getSalesReport = async (req, res) => {
   try {
 
-    const matchFilter = {};
+    const { from, to, status, userId } = req.query;
 
+    let match = {
+      status: { $ne: "cancelled" }
+    };
 
-        matchFilter.status = { $ne: "cancelled" };
+    // فلترة بالتاريخ
+    if (from || to) {
+      match.createdAt = {};
 
-        // date
-        if (from || to) {
-        matchFilter.createdAt = {};
-        if (from) matchFilter.createdAt.$gte = new Date(from);
-        if (to) matchFilter.createdAt.$lte = new Date(to);
-        }
+      if (from) {
+        match.createdAt.$gte = new Date(from);
+      }
 
-        // status
-        if (status && status !== "all") {
-        matchFilter.status = status;
-        }
+      if (to) {
+        match.createdAt.$lte = new Date(to);
+      }
+    }
 
-        // user
-        if (userId) {
-        matchFilter.user = new mongoose.Types.ObjectId(userId);
-        }
+    // فلترة بالحالة
+    if (status && status !== "all") {
+      match.status = status;
+    }
 
+    // فلترة بالمستخدم
+    if (userId) {
+      match.user = userId;
+    }
 
+    // استخدم match هنا
     const report = await Order.aggregate([
-      {
-        $match: {
-          status: { $ne: "cancelled" } 
-        }
-      },
+      { $match: match },
 
       { $unwind: "$items" },
 
@@ -64,23 +67,13 @@ exports.getSalesReport = async (req, res) => {
               { $eq: ["$items.unit_type", "قطعة"] },
               {
                 $multiply: [
-                  {
-                    $subtract: [
-                      "$items.price",
-                      "$costPerUnit"
-                    ]
-                  },
+                  { $subtract: ["$items.price", "$costPerUnit"] },
                   "$items.quantity"
                 ]
               },
               {
                 $multiply: [
-                  {
-                    $subtract: [
-                      "$items.price",
-                      "$productData.purchasePrice"
-                    ]
-                  },
+                  { $subtract: ["$items.price", "$productData.purchasePrice"] },
                   "$items.quantity"
                 ]
               }
@@ -109,104 +102,12 @@ exports.getSalesReport = async (req, res) => {
       }
     ]);
 
-    const unitStats = await Order.aggregate([
-  { $unwind: "$items" },
+    res.json({
+      summary: report[0] || {},
+      unitStats: {},
+      products: []
+    });
 
-  {
-    $group: {
-      _id: "$items.unit_type",
-      total: { $sum: "$items.quantity" }
-    }
-  }
-]);
-
-const productProfit = await Order.aggregate([
-  { $unwind: "$items" },
-
-  {
-    $lookup: {
-      from: "products",
-      localField: "items.product",
-      foreignField: "_id",
-      as: "productData"
-    }
-  },
-
-  { $unwind: "$productData" },
-
-  {
-    $addFields: {
-      costPerUnit: {
-        $divide: [
-          "$productData.purchasePrice",
-          "$productData.unitsPerPackage"
-        ]
-      }
-    }
-  },
-
-  {
-    $addFields: {
-      profit: {
-        $cond: [
-          { $eq: ["$items.unit_type", "قطعة"] },
-          {
-            $multiply: [
-              {
-                $subtract: [
-                  "$items.price",
-                  "$costPerUnit"
-                ]
-              },
-              "$items.quantity"
-            ]
-          },
-          {
-            $multiply: [
-              {
-                $subtract: [
-                  "$items.price",
-                  "$productData.purchasePrice"
-                ]
-              },
-              "$items.quantity"
-            ]
-          }
-        ]
-      }
-    }
-  },
-
-  {
-    $group: {
-      _id: "$items.product",
-      productName: { $first: "$items.productName" },
-      totalSold: { $sum: "$items.quantity" },
-      totalRevenue: { $sum: "$items.subtotal" },
-      totalProfit: { $sum: "$profit" }
-    }
-  },
-
-  { $sort: { totalProfit: -1 } }
-]);
-
-    res.status(200).json({
-  success: "تم جلب التقارير بنجاح",
-
-  summary: report[0] || {
-    totalOrders: 0,
-    totalSales: 0,
-    totalProfit: 0,
-    totalItems: 0
-  },
-
-  unitStats: unitStats.reduce((acc, item) => {
-    acc[item._id] = item.total;
-    return acc;
-  }, {}),
-
-  products: productProfit
-});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
