@@ -26,6 +26,10 @@ const aboutRoute =require(`${__dirname}/routes/about`);
 const reviewRoute =require(`${__dirname}/routes/review`);
 const adminRoute =require(`${__dirname}/routes/admin`);
 const notificationRoute =require(`${__dirname}/routes/notification`)
+const reportsRoute =require(`${__dirname}/routes/reports`);
+
+
+
 require(`${__dirname}/jobs/cleanNotifications`);
 
 config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority");
@@ -46,7 +50,7 @@ app.use('/v1/about',aboutRoute);
 app.use('/v1/review',reviewRoute);
 app.use('/v1/admin',adminRoute);
 app.use('/v1/notification',notificationRoute);
-
+app.use('/v1/reports',reportsRoute);
 
 
 const PORT=process.env.PORT || 5000;
