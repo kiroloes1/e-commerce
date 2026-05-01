@@ -1,6 +1,6 @@
 const Order = require(`${__dirname}/../../models/order`);
 const  User=require(`${__dirname}/../../models/user`)
-const getSalesReport = async (req, res) => {
+exports.getSalesReport = async (req, res) => {
   try {
 
     const matchFilter = {};
@@ -212,7 +212,7 @@ const productProfit = await Order.aggregate([
   }
 };
 
-const getUserName=async(req,res)=>{
+exports.getUserName=async(req,res)=>{
     try{
         const users=await User.find({role:"customer"},{userName:1 ,_id:1});
 
