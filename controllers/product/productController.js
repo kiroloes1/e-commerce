@@ -224,8 +224,11 @@ exports.createFromExcel = async (req, res) => {
         image: {
           url: imageUrl,
           publicId: ""
-        }
+        },
+          totalUnits: Number(availableQuantity) * Number(unitsPerPackage),
+  status: (availableQuantity > 0 ? "active" : "out-of-stock")
       });
+
     }
 
     // ✅ 3. insert على دفعات (مهم جدًا لـ Vercel)
