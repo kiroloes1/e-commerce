@@ -8,7 +8,7 @@ exports.getSalesReport = async (req, res) => {
     const matchFilter = {};
 
     // default: exclude cancelled
-    matchFilter.status = { $ne: "cancelled" };
+   matchFilter.status = { $nin: ["cancelled", "rejected"] };
 
     // date filter
     if (from || to) {
