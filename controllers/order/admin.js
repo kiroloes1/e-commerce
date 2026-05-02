@@ -118,7 +118,7 @@ exports.approvePayment = async (req, res) => {
             });
         }
 
-        order.status = "paid";
+        order.payment.status = "paid";
         order.payment.paidAt = new Date();
 
         await order.save();
@@ -153,7 +153,7 @@ exports.rejectPayment = async (req, res) => {
         
 
 
-        order.payment.status = "unpaid";
+        order.status = "unpaid";
         order.status = "cancelled";
 
         order.rejectionReason = reason || "No reason provided";
