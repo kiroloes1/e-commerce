@@ -118,7 +118,7 @@ exports.approvePayment = async (req, res) => {
             });
         }
 
-        order.payment.status = "paid";
+        order.status = "paid";
         order.payment.paidAt = new Date();
 
         await order.save();
