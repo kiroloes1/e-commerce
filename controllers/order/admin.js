@@ -135,6 +135,8 @@ exports.approvePayment = async (req, res) => {
     }
 };
 
+
+
 //reject payment
 exports.rejectPayment = async (req, res) => {
     try {
@@ -148,8 +150,10 @@ exports.rejectPayment = async (req, res) => {
                 message: "Order not found"
             });
         }
+        
 
-        order.payment.status = "rejected";
+
+        order.payment.status = "unpaid";
         order.status = "cancelled";
 
         order.rejectionReason = reason || "No reason provided";
