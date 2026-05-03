@@ -89,7 +89,7 @@ exports.updateStatus = async (req, res) => {
         await createNotification(
             order.user.toString(),
            s,
-           "حالة طلبك رقم " + order.orderNumber + " تم تحديثها إلى " + s,
+           " حالة طلبك رقم " + order.orderNumber + " تم تحديثها إلى " + s,
          )
         
 
@@ -122,6 +122,12 @@ exports.approvePayment = async (req, res) => {
         order.payment.paidAt = new Date();
 
         await order.save();
+            await createNotification(
+            order.user.toString(),
+            "تم تأكيد الدفع",
+            `تم تأكيد الدفع لطلبك رقم ${order.orderNumber} وأصبح مدفوع بالكامل`
+            );
+                    
 
         res.status(200).json({
             message: "Payment approved",
@@ -153,19 +159,18 @@ exports.rejectPayment = async (req, res) => {
         
 
 
-        order.status = "unpaid";
-        order.status = "cancelled";
+order.payment.status = "unpaid";
+order.status = "cancelled";
 
         order.rejectionReason = reason || "No reason provided";
 
         await order.save();
 
-                await createNotification(
-            order.user.toString(),
-              "تم رفض الدفع",
-            //   message
-            "تم رفص الطلب الخاص بك والسبب" +reason
-        )
+await createNotification(
+  order.user.toString(),
+  "تم رفض الدفع",
+  `تم رفض الدفع لطلبك رقم ${order.orderNumber}. السبب: ${reason || "لم يتم تحديد سبب"}`
+);
 
         res.status(200).json({
             message: "Payment rejected",
