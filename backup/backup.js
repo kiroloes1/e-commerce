@@ -103,16 +103,19 @@ await drive.files.create({
 
 
 
-router.use(authMiddleware.protected);
-router.use(role("superadmin" ,"admin"));
-router.get("/backup", async (req, res) => {
-  try {
-    await createBackup();
-    res.json({ success: true, message: "Backup done ✔" });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+router.get(
+  "/backup",
+  authMiddleware.protected,
+  role("superadmin", "admin"),
+  async (req, res) => {
+    try {
+      await createBackup();
+      res.json({ success: true, message: "Backup done ✔" });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
   }
-});
+);
 
 /* =========================
    4. AUTO BACKUP (DAILY)
