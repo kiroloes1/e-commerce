@@ -260,7 +260,7 @@ exports.viewMyOrder = async (req, res) => {
         const order = await Order.findOne({
             _id: id,
             user: userId
-        }).populate("items.product" ,"image.url");
+        }).populate("items.product" ,"image.url , description");
 
         if (!order) {
             return res.status(404).json({
