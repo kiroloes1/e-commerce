@@ -60,6 +60,8 @@ router.delete('/:productId', productController.deleteProduct);
 //  Upload product image
 router.post('/:productId/upload-image', upload.single('image'), productController.uploadImageToProduct);
 
+router.delete('/', productController.deleteAllProducts );
+
 //  Delete product image
 router.delete('/:productId/delete-image', productController.deleteImageToProduct);
 
