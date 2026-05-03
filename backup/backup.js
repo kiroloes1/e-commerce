@@ -90,6 +90,27 @@ async function createBackup() {
   console.log("✅ Backup uploaded to Google Drive");
 }
 
+
+
+async function createBackupManual() {
+  const uri = process.env.MONGO_URI;
+  const client = new MongoClient(uri);
+
+  await client.connect();
+
+  const db = client.db();
+  const collections = await db.listCollections().toArray();
+
+  let backup = {};
+
+  for (const col of collections) {
+    backup[col.name] = await db.collection(col.name).find({}).toArray();
+  }
+
+  return backup;
+
+}
+
 /* =========================
    3. MANUAL BACKUP
 ========================= */
@@ -106,6 +127,7 @@ router.get("/backup", async (req, res) => {
   }
 });
 
+
 /* =========================
    4. AUTO BACKUP (DAILY)
 ========================= */
@@ -118,5 +140,20 @@ cron.schedule("0 2 * * *", async () => {
     console.log("❌ Auto backup failed:", err.message);
   }
 });
+
+
+
+router.use(authMiddleware.protected);
+router.use(role("superadmin" ,"admin"));
+
+router.get("/backupMaual", async (req, res) => {
+  try {
+   const data= await createBackupManual();
+    res.json({ success: true, message: "Backup done ✔" ,data:data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 module.exports = router;
