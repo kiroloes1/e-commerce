@@ -47,7 +47,7 @@ router.get("/oauth2callback", async (req, res) => {
 ========================= */
 async function createBackup() {
   const uri ="mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority"
-  const client = new MongoClient(uri);
+ const client = new MongoClient(uri);
 
   await client.connect();
 
@@ -70,23 +70,43 @@ async function createBackup() {
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-  await drive.files.create({
-    requestBody: {
-      name: fileName,
-    },
-    media: {
-      mimeType: "application/json",
-      body: fs.createReadStream(filePath),
-    },
+  // 🔍 ابحث عن الملف لو موجود
+  const existingFiles = await drive.files.list({
+    q: name=`${fileName}' and trashed=false `,
+    fields: "files(id, name)",
   });
 
+  if (existingFiles.data.files.length > 0) {
+    // 🔄 تحديث الملف القديم
+    const fileId = existingFiles.data.files[0].id;
+
+    await drive.files.update({
+      fileId: fileId,
+      media: {
+        mimeType: "application/json",
+        body: fs.createReadStream(filePath),
+      },
+    });
+
+    console.log("♻️ Backup updated on Google Drive");
+  } else {
+    // ⬆️ رفع أول مرة
+    await drive.files.create({
+      requestBody: {
+        name: fileName,
+      },
+      media: {
+        mimeType: "application/json",
+        body: fs.createReadStream(filePath),
+      },
+    });
+
+    console.log("✅ Backup uploaded to Google Drive");
+  }
+
   fs.unlinkSync(filePath);
-
   await client.close();
-
-  console.log("✅ Backup uploaded to Google Drive");
 }
-
 
 
 async function createBackupManual() {
