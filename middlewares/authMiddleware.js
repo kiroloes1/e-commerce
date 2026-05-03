@@ -2,7 +2,7 @@ const jwt=require('jsonwebtoken');
 const User=require(`${__dirname}/../models/user`);
 exports.protected=async(req,res,next)=>{
     const authHeader=req.headers.authorization;;
-    if(!authHeader || !authHeader.startsWith('Bearer ')){
+    if(!authHeader || !authHeader.startsWith('Bearer')){
         return res.status(401).json({message:"يجب عليك التسجيل اولا"});
     }
     const token=authHeader.split(" ")[1];
