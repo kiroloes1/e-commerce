@@ -5,6 +5,9 @@ const fs = require("fs");
 const path = require("path");
 const { google } = require("googleapis");
 const cron = require("node-cron");
+const authMiddleware = require(`${__dirname}/../middlewares/authMiddleware`);
+const {role}=require(`${__dirname}/../middlewares/authorization`)
+
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -13,7 +16,7 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 /* =========================
-   GOOGLE AUTH
+   1. LOGIN GOOGLE
 ========================= */
 router.get("/auth/google", (req, res) => {
   const url = oauth2Client.generateAuthUrl({
@@ -25,17 +28,21 @@ router.get("/auth/google", (req, res) => {
 });
 
 /* =========================
-   CALLBACK
+   2. CALLBACK
 ========================= */
 router.get("/oauth2callback", async (req, res) => {
-  const { code } = req.query;
+  try {
+    const { code } = req.query;
 
-  const { tokens } = await oauth2Client.getToken(code);
-  oauth2Client.setCredentials(tokens);
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
 
-  fs.writeFileSync("token.json", JSON.stringify(tokens));
+    fs.writeFileSync("token.json", JSON.stringify(tokens));
 
-  res.send("Google Auth Success ✔");
+    res.send("Google Auth Success ✔");
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
 /* =========================
@@ -56,31 +63,16 @@ async function createBackup() {
     backup[col.name] = await db.collection(col.name).find({}).toArray();
   }
 
-  const fileName = "backup.json";
+  const fileName = `backup-${Date.now()}.json`;
   const filePath = path.join(__dirname, fileName);
 
-  // 🔥 save backup to file
   fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
 
-  // 🔐 load token
   const token = JSON.parse(fs.readFileSync("token.json"));
   oauth2Client.setCredentials(token);
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-  // check old file
-  const list = await drive.files.list({
-    q: "name='backup.json'",
-    fields: "files(id, name)",
-  });
-
-  if (list.data.files.length > 0) {
-    await drive.files.delete({
-      fileId: list.data.files[0].id,
-    });
-  }
-
-  // upload new file
   await drive.files.create({
     requestBody: {
       name: fileName,
@@ -92,14 +84,21 @@ async function createBackup() {
   });
 
   fs.unlinkSync(filePath);
+
   await client.close();
 
   console.log("✅ Backup uploaded to Google Drive");
 }
 
 /* =========================
-   MANUAL BACKUP
+   3. MANUAL BACKUP
 ========================= */
+
+
+
+
+// router.use(authMiddleware.protected);
+// router.use(role("superadmin" ,"admin"));
 router.get("/backup", async (req, res) => {
   try {
     await createBackup();
@@ -110,12 +109,13 @@ router.get("/backup", async (req, res) => {
 });
 
 /* =========================
-   AUTO BACKUP
+   4. AUTO BACKUP (DAILY)
 ========================= */
 cron.schedule("0 2 * * *", async () => {
+  console.log("⏰ Running daily backup...");
+
   try {
     await createBackup();
-    console.log("⏰ Auto backup done");
   } catch (err) {
     console.log("❌ Auto backup failed:", err.message);
   }
