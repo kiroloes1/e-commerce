@@ -60,7 +60,7 @@ async function createBackup() {
     backup[col.name] = await db.collection(col.name).find({}).toArray();
   }
 
-  const fileName = `backup-${Date.now()}.json`;
+  const fileName = "backup.json";
   const filePath = path.join(__dirname, fileName);
 
   fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
