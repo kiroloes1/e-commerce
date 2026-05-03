@@ -14,7 +14,6 @@ app.use(cors({
 }));
 
 
-
 const server =require("http").createServer(app);
 const { init } = require(`${__dirname}/sockets/socket`);
 init(server);
@@ -26,8 +25,9 @@ const orderRoute=require(`${__dirname}/routes/order`);
 const aboutRoute =require(`${__dirname}/routes/about`);
 const reviewRoute =require(`${__dirname}/routes/review`);
 const adminRoute =require(`${__dirname}/routes/admin`);
-const notificationRoute =require(`${__dirname}/routes/notification`)
+const notificationRoute =require(`${__dirname}/routes/notification`);
 const reportsRoute =require(`${__dirname}/routes/reports`);
+const backupRoute = require("./backup/backup");
 
 
 
@@ -39,8 +39,6 @@ config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.i
 
 
 app.use(bodyParser.json());
-// app.use(express.json({ limit: '50mb' }));
-// app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
@@ -54,10 +52,11 @@ app.use('/v1/review',reviewRoute);
 app.use('/v1/admin',adminRoute);
 app.use('/v1/notification',notificationRoute);
 app.use('/v1/reports',reportsRoute);
+app.use("/", backupRoute);
+
 
 
 const PORT=process.env.PORT || 5000;
 server.listen(PORT,()=>{
     console.log(`Server is running on port ${PORT}`);
 })
-
