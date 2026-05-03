@@ -5,12 +5,10 @@ const fs = require("fs");
 const path = require("path");
 const { google } = require("googleapis");
 const cron = require("node-cron");
+const authMiddleware = require(`${__dirname}/../middlewares/authMiddleware`);
+const {role}=require(`${__dirname}/../middlewares/authorization`)
 
-require("dotenv").config(); // مهم جدًا
 
-/* =========================
-   GOOGLE AUTH CLIENT
-========================= */
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
@@ -18,33 +16,28 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 /* =========================
-   LOGIN GOOGLE
+   1. LOGIN GOOGLE
 ========================= */
 router.get("/auth/google", (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/drive.file"],
-    prompt: "consent",
   });
 
   res.redirect(url);
 });
 
 /* =========================
-   CALLBACK
+   2. CALLBACK
 ========================= */
 router.get("/oauth2callback", async (req, res) => {
   try {
     const { code } = req.query;
 
     const { tokens } = await oauth2Client.getToken(code);
-
     oauth2Client.setCredentials(tokens);
 
-    fs.writeFileSync(
-      path.join(__dirname, "token.json"),
-      JSON.stringify(tokens)
-    );
+    fs.writeFileSync("token.json", JSON.stringify(tokens));
 
     res.send("Google Auth Success ✔");
   } catch (err) {
@@ -57,11 +50,6 @@ router.get("/oauth2callback", async (req, res) => {
 ========================= */
 async function createBackup() {
   const uri = process.env.MONGO_URI;
-
-  if (!uri) {
-    throw new Error("MONGO_URI is not defined in .env");
-  }
-
   const client = new MongoClient(uri);
 
   await client.connect();
@@ -69,7 +57,7 @@ async function createBackup() {
   const db = client.db();
   const collections = await db.listCollections().toArray();
 
-  const backup = {};
+  let backup = {};
 
   for (const col of collections) {
     backup[col.name] = await db.collection(col.name).find({}).toArray();
@@ -80,15 +68,7 @@ async function createBackup() {
 
   fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
 
-  // load token safely
-  const tokenPath = path.join(__dirname, "token.json");
-
-  if (!fs.existsSync(tokenPath)) {
-    throw new Error("Google token not found. Please login first.");
-  }
-
-  const token = JSON.parse(fs.readFileSync(tokenPath));
-
+  const token = JSON.parse(fs.readFileSync("token.json"));
   oauth2Client.setCredentials(token);
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
@@ -111,20 +91,23 @@ async function createBackup() {
 }
 
 /* =========================
-   MANUAL BACKUP
+   3. MANUAL BACKUP
 ========================= */
+
+
+
+
 router.get("/backup", async (req, res) => {
   try {
     await createBackup();
     res.json({ success: true, message: "Backup done ✔" });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 /* =========================
-   AUTO BACKUP (DAILY 2AM)
+   4. AUTO BACKUP (DAILY)
 ========================= */
 cron.schedule("0 2 * * *", async () => {
   console.log("⏰ Running daily backup...");
@@ -132,7 +115,7 @@ cron.schedule("0 2 * * *", async () => {
   try {
     await createBackup();
   } catch (err) {
-    console.error("❌ Auto backup failed:", err.message);
+    console.log("❌ Auto backup failed:", err.message);
   }
 });
 
