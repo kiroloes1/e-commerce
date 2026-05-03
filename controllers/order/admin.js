@@ -124,6 +124,7 @@ exports.approvePayment = async (req, res) => {
         }
         order.payment.status = "paid";
         order.payment.paidAt = new Date();
+        order.rejectionReason="";
 
         await order.save();
             await createNotification(
@@ -163,8 +164,8 @@ exports.rejectPayment = async (req, res) => {
         
 
 
-order.payment.status = "unpaid";
-order.status = "cancelled";
+        order.payment.status = "unpaid";
+        order.status = "cancelled";
 
         order.rejectionReason = reason || "No reason provided";
 
