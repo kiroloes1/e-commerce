@@ -241,10 +241,24 @@ exports.maybesell =async(req,res)=>{
 exports.bestSellerAdmin = async (req, res) => {
   try {
     let bestSellers = await Order.aggregate([
-      // 1. تفكيك items array
+      
+      // 1. فك items
       { $unwind: "$items" },
 
-      // 2. تجميع المبيعات لكل product
+      // 2. نجيب بيانات المنتج
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "product"
+        }
+      },
+
+      // 3. نحولها object
+      { $unwind: "$product" },
+
+      // 4. التجميع
       {
         $group: {
           _id: "$items.product",
@@ -254,38 +268,28 @@ exports.bestSellerAdmin = async (req, res) => {
               $multiply: ["$items.quantity", "$items.price"]
             }
           },
-          productName: { $first: "$items.productName" }
+          productName: { $first: "$items.productName" },
+          description: { $first: "$product.description" } // ✅ صح هنا
         }
       },
 
-      // 3. ترتيب حسب الأكثر مبيعًا
+      // 5. ترتيب
       { $sort: { totalSold: -1 } },
 
-        { $limit: 5 },
-      // 4. جلب بيانات المنتج من Product collection
-      {
-        $lookup: {
-          from: "products", // اسم الكوليكشن في MongoDB
-          localField: "_id",
-          foreignField: "_id",
-          as: "product"
-        }
-      },
+      // 6. top 5
+      { $limit: 5 },
 
-      // 5. تحويل المنتج من array إلى object
-      { $unwind: "$product" },
-
-      // 6. شكل النتيجة النهائي
+      // 7. الشكل النهائي
       {
         $project: {
           productName: 1,
-          description:1
-
+          description: 1,
+          totalSold: 1,
+          totalRevenue: 1
         }
       }
-    ]);
 
-  
+    ]);
 
     res.status(200).json({
       success: true,
