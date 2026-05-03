@@ -159,6 +159,7 @@ matchFilter.status = { $nin: ["cancelled", "rejected"] };
         $group: {
           _id: "$items.product",
           productName: { $first: "$items.productName" },
+           description: { $first: "$productData.description" },
           totalSold: { $sum: "$items.quantity" },
           totalRevenue: { $sum: "$items.subtotal" },
           totalProfit: { $sum: "$profit" }
