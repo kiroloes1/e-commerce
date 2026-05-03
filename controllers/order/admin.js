@@ -81,6 +81,7 @@ exports.updateStatus = async (req, res) => {
         if (status === "cancelled") {order.cancelledAt = new Date(); s= "  تم الغاء الطلب من قبل المسئول";}
 
 
+        order.rejectionReason="";
         await order.save();
 
      
