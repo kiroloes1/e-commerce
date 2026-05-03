@@ -119,6 +119,9 @@ exports.approvePayment = async (req, res) => {
             });
         }
 
+        if(order.status = "cancelled"){
+             order.status = "pending";  
+        }
         order.payment.status = "paid";
         order.payment.paidAt = new Date();
 
