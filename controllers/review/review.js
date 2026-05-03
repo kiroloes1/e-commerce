@@ -68,7 +68,7 @@ exports.getReviewsByUser = async (req, res) => {
     try {
         
         const { userId } = req.user;
-        const reviews = await ReviewModel.find({ userId }).populate('productId', 'productName');
+        const reviews = await ReviewModel.find({ userId }).populate('productId', 'productName description');
         return res.status(200).json({
             data: reviews
         }).sort({ createdAt: -1 });
@@ -151,7 +151,7 @@ exports.getReviews=async(req,res)=>{
 // best reviews 
 exports.getBestReviews = async (req, res) => {
     try {
-        const reviews = await ReviewModel.find({rating:{$gte:3}}).limit(10).populate('productId', 'productName productName' ).populate('userId', 'userName');   
+        const reviews = await ReviewModel.find({rating:{$gte:3}}).limit(10).populate('productId', 'productName description' ).populate('userId', 'userName');   
         return res.status(200).json({
             data: reviews
         });
