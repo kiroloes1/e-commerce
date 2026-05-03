@@ -63,25 +63,31 @@ async function createBackup() {
     backup[col.name] = await db.collection(col.name).find({}).toArray();
   }
 
-  const fileName = `backup-${Date.now()}.json`;
-  const filePath = path.join(__dirname, fileName);
+const fileName = "backup.json";
+const filePath = path.join(__dirname, fileName);
 
-  fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
+// check existing file
+const list = await drive.files.list({
+  q: "name='backup.json'",
+  fields: "files(id, name)",
+});
 
-  const token = JSON.parse(fs.readFileSync("token.json"));
-  oauth2Client.setCredentials(token);
-
-  const drive = google.drive({ version: "v3", auth: oauth2Client });
-
-  await drive.files.create({
-    requestBody: {
-      name: fileName,
-    },
-    media: {
-      mimeType: "application/json",
-      body: fs.createReadStream(filePath),
-    },
+if (list.data.files.length > 0) {
+  await drive.files.delete({
+    fileId: list.data.files[0].id,
   });
+}
+
+// upload new
+await drive.files.create({
+  requestBody: {
+    name: fileName,
+  },
+  media: {
+    mimeType: "application/json",
+    body: fs.createReadStream(filePath),
+  },
+});
 
   fs.unlinkSync(filePath);
 
