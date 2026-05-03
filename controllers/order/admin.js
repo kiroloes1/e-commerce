@@ -1,7 +1,9 @@
 const Order=require(`${__dirname}/../../models/order`);
 const { getIO } = require(`${__dirname}/../../sockets/socket`);
 const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
- const cartModel=require(`${__dirname}/../../models/cart`)
+ const cartModel=require(`${__dirname}/../../models/cart`);
+ const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
+ const mongoose = require("mongoose");
 //view all orders
 exports.viewAllOrders = async (req, res) => {
     try {
@@ -73,6 +75,9 @@ exports.updateStatus = async (req, res) => {
         if (status === "confirmed"){ order.confirmedAt = new Date(); s="تم تأكيد الطلب";}
         if (status === "shipped") {order.shippedAt = new Date();     s="تم شحن الطلب";}
         if (status === "delivered"){
+                if (order.payment?.proofImage?.publicId) {
+                        await cloudinary.uploader.destroy(order.payment?.proofImage?.publicId);
+                        } 
             order.deliveredAt = new Date();
             s="تم توصيل الطلب";        
             order.payment.status = "paid";
