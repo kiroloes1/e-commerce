@@ -254,7 +254,7 @@ exports.bestSellerAdmin = async (req, res) => {
               $multiply: ["$items.quantity", "$items.price"]
             }
           },
-          productName: { $first: "$items.productName" }
+       
         }
       },
 
