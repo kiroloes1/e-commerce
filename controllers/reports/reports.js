@@ -1,14 +1,17 @@
 const Order = require(`${__dirname}/../../models/order`);
-const  User=require(`${__dirname}/../../models/user`)
+const User = require(`${__dirname}/../../models/user`);
+const Product = require(`${__dirname}/../../models/product`);
 const mongoose = require("mongoose");
+
 exports.getSalesReport = async (req, res) => {
   try {
     const { from, to, status, userId } = req.query;
 
     const matchFilter = {};
 
-    // default: exclude cancelled
-matchFilter.status = { $nin: ["cancelled", "rejected"] };
+    // default: exclude cancelled/rejected
+    matchFilter.status = { $nin: ["cancelled", "rejected"] };
+
     // date filter
     if (from || to) {
       matchFilter.createdAt = {};
@@ -96,7 +99,7 @@ matchFilter.status = { $nin: ["cancelled", "rejected"] };
 
     // ---------------- UNIT STATS ----------------
     const unitStats = await Order.aggregate([
-      { $match: matchFilter },   // 👈 مهم جدًا
+      { $match: matchFilter },
       { $unwind: "$items" },
 
       {
@@ -109,7 +112,7 @@ matchFilter.status = { $nin: ["cancelled", "rejected"] };
 
     // ---------------- PRODUCT PROFIT ----------------
     const productProfit = await Order.aggregate([
-      { $match: matchFilter },   // 👈 مهم جدًا
+      { $match: matchFilter },
       { $unwind: "$items" },
 
       {
@@ -159,7 +162,7 @@ matchFilter.status = { $nin: ["cancelled", "rejected"] };
         $group: {
           _id: "$items.product",
           productName: { $first: "$items.productName" },
-           description: { $first: "$productData.description" },
+          description: { $first: "$productData.description" },
           totalSold: { $sum: "$items.quantity" },
           totalRevenue: { $sum: "$items.subtotal" },
           totalProfit: { $sum: "$profit" }
@@ -169,35 +172,132 @@ matchFilter.status = { $nin: ["cancelled", "rejected"] };
       { $sort: { totalProfit: -1 } }
     ]);
 
+    // =====================================================
+    //                EXTRA STATS (NEW)
+    // =====================================================
+
+    const usersStats = await User.aggregate([
+      {
+        $group: {
+          _id: "$role",
+          total: { $sum: 1 },
+          active: {
+            $sum: { $cond: [{ $eq: ["$active", true] }, 1, 0] }
+          },
+          inactive: {
+            $sum: { $cond: [{ $eq: ["$active", false] }, 1, 0] }
+          }
+        }
+      }
+    ]);
+
+    const productsStats = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: 1 },
+
+          outOfStock: {
+            $sum: {
+              $cond: [{ $lte: ["$availableQuantity", 0] }, 1, 0]
+            }
+          },
+
+          lowStock: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gt: ["$availableQuantity", 0] },
+                    { $lte: ["$availableQuantity", 5] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    const categoryStats = await Product.aggregate([
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // format users
+    const formattedUsers = {
+      customer: { total: 0, active: 0, inactive: 0 },
+      admin: { total: 0, active: 0, inactive: 0 }
+    };
+
+    usersStats.forEach((u) => {
+      if (u._id === "customer" || u._id === "admin") {
+        formattedUsers[u._id] = {
+          total: u.total,
+          active: u.active,
+          inactive: u.inactive
+        };
+      }
+    });
+
+    // ---------------- RESPONSE ----------------
     res.status(200).json({
       success: true,
+
       summary: report[0] || {
         totalOrders: 0,
         totalSales: 0,
         totalProfit: 0,
         totalItems: 0
       },
+
       unitStats: unitStats.reduce((acc, item) => {
         acc[item._id] = item.total;
         return acc;
       }, {}),
-      products: productProfit
+
+      products: productProfit,
+
+      // NEW FIELD (safe - does NOT break frontend)
+      extraStats: {
+        users: formattedUsers,
+
+        products: {
+          total: productsStats[0]?.totalProducts || 0,
+          outOfStock: productsStats[0]?.outOfStock || 0,
+          lowStock: productsStats[0]?.lowStock || 0
+        },
+
+        categories: categoryStats
+      }
     });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-exports.getUserName=async(req,res)=>{
-    try{
-        const users=await User.find({role:"customer"},{userName:1 ,_id:1});
 
-        res.status(200).json({
-            message:"تم جلب جيمع اسماء المستخدمين بنجاح",
-            users
-        })
+// =====================================================
+// USERS NAMES API (unchanged)
+// =====================================================
+exports.getUserName = async (req, res) => {
+  try {
+    const users = await User.find(
+      { role: "customer" },
+      { userName: 1, _id: 1 }
+    );
 
-    } catch (err) {
+    res.status(200).json({
+      message: "تم جلب جيمع اسماء المستخدمين بنجاح",
+      users
+    });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
