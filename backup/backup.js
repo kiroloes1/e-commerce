@@ -6,8 +6,6 @@ const path = require("path");
 const { google } = require("googleapis");
 const cron = require("node-cron");
 
-
-
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
@@ -15,7 +13,7 @@ const oauth2Client = new google.auth.OAuth2(
 );
 
 /* =========================
-   1. LOGIN GOOGLE
+   GOOGLE AUTH
 ========================= */
 router.get("/auth/google", (req, res) => {
   const url = oauth2Client.generateAuthUrl({
@@ -27,21 +25,17 @@ router.get("/auth/google", (req, res) => {
 });
 
 /* =========================
-   2. CALLBACK
+   CALLBACK
 ========================= */
 router.get("/oauth2callback", async (req, res) => {
-  try {
-    const { code } = req.query;
+  const { code } = req.query;
 
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
+  const { tokens } = await oauth2Client.getToken(code);
+  oauth2Client.setCredentials(tokens);
 
-    fs.writeFileSync("token.json", JSON.stringify(tokens));
+  fs.writeFileSync("token.json", JSON.stringify(tokens));
 
-    res.send("Google Auth Success ✔");
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
+  res.send("Google Auth Success ✔");
 });
 
 /* =========================
@@ -62,47 +56,50 @@ async function createBackup() {
     backup[col.name] = await db.collection(col.name).find({}).toArray();
   }
 
-const fileName = "backup.json";
-const filePath = path.join(__dirname, fileName);
+  const fileName = "backup.json";
+  const filePath = path.join(__dirname, fileName);
 
-// check existing file
-const list = await drive.files.list({
-  q: "name='backup.json'",
-  fields: "files(id, name)",
-});
+  // 🔥 save backup to file
+  fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
 
-if (list.data.files.length > 0) {
-  await drive.files.delete({
-    fileId: list.data.files[0].id,
+  // 🔐 load token
+  const token = JSON.parse(fs.readFileSync("token.json"));
+  oauth2Client.setCredentials(token);
+
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+
+  // check old file
+  const list = await drive.files.list({
+    q: "name='backup.json'",
+    fields: "files(id, name)",
   });
-}
 
-// upload new
-await drive.files.create({
-  requestBody: {
-    name: fileName,
-  },
-  media: {
-    mimeType: "application/json",
-    body: fs.createReadStream(filePath),
-  },
-});
+  if (list.data.files.length > 0) {
+    await drive.files.delete({
+      fileId: list.data.files[0].id,
+    });
+  }
+
+  // upload new file
+  await drive.files.create({
+    requestBody: {
+      name: fileName,
+    },
+    media: {
+      mimeType: "application/json",
+      body: fs.createReadStream(filePath),
+    },
+  });
 
   fs.unlinkSync(filePath);
-
   await client.close();
 
   console.log("✅ Backup uploaded to Google Drive");
 }
 
 /* =========================
-   3. MANUAL BACKUP
+   MANUAL BACKUP
 ========================= */
-
-
-
-
-
 router.get("/backup", async (req, res) => {
   try {
     await createBackup();
@@ -113,13 +110,12 @@ router.get("/backup", async (req, res) => {
 });
 
 /* =========================
-   4. AUTO BACKUP (DAILY)
+   AUTO BACKUP
 ========================= */
 cron.schedule("0 2 * * *", async () => {
-  console.log("⏰ Running daily backup...");
-
   try {
     await createBackup();
+    console.log("⏰ Auto backup done");
   } catch (err) {
     console.log("❌ Auto backup failed:", err.message);
   }
