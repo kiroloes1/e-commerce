@@ -63,6 +63,8 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: "هذا المستخدم غير موجود!" });
     }
 
+    await cartModel.delete({user:customerId});
+
     res.status(200).json({
       message: "تم حذف المستخدم بنجاح",
       user
