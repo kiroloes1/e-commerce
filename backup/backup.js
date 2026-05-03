@@ -7,9 +7,9 @@ const { google } = require("googleapis");
 const cron = require("node-cron");
 
 const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
+  "1018006787889-t3klhlqto9rg2jfgp16vblmpgplbn2re.apps.googleusercontent.com",
+  "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",
+  "http://localhost:5000/oauth2callback"
 );
 
 /* =========================
@@ -46,7 +46,7 @@ router.get("/oauth2callback", async (req, res) => {
    BACKUP FUNCTION
 ========================= */
 async function createBackup() {
-  const uri = process.env.MONGO_URI;
+  const uri ="mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority"
   const client = new MongoClient(uri);
 
   await client.connect();
@@ -90,7 +90,7 @@ async function createBackup() {
 
 
 async function createBackupManual() {
-  const uri = process.env.MONGO_URI;
+  const uri = "mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority"
   const client = new MongoClient(uri);
 
   await client.connect();
