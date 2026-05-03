@@ -214,7 +214,7 @@ exports.maybesell =async(req,res)=>{
     try{
         const carts=await cartModel.find({},{"items.product":1 }).populate({
             path:"items.product",
-            select:"productName"
+            select:"productName description:1"
         });
 
        const products = carts.flatMap(cart =>
@@ -279,6 +279,7 @@ exports.bestSellerAdmin = async (req, res) => {
       {
         $project: {
           productName: 1,
+          description:1
 
         }
       }
