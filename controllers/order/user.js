@@ -354,6 +354,20 @@ exports.cancelOrder = async (req, res) => {
         await order.save({ session });
 
           await Order.findByIdAndDelete(id).session(session)
+
+const admins = await UserModel.find({
+    role: { $in: ["admin", "superadmin"] }
+});
+
+for (const admin of admins) {
+
+
+    await createNotification(
+        admin._id.toString(),
+        "تم إلغاء طلب",
+        `تم إلغاء الطلب #${order.orderNumber}`
+    );
+}
         await session.commitTransaction();
         session.endSession();
 
