@@ -1,6 +1,9 @@
 const Order=require(`${__dirname}/../../models/order`);
 const Product=require(`${__dirname}/../../models/product`);
 const Cart=require(`${__dirname}/../../models/cart`);
+const UserModel=require(`${__dirname}/../../models/user`)
+const { getIO } = require(`${__dirname}/../../sockets/socket`);
+const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
 
 // cloudinary
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`);
@@ -183,9 +186,22 @@ exports.createOrder=async(req,res)=>{
 
         }], { session });
 
+
+
              await session.commitTransaction();
         session.endSession();
 
+                const admins = await UserModel.find({
+            role: { $in: ["admin", "superadmin"] }
+        })
+
+        for (const admin of admins) {
+            await createNotification(
+                admin._id.toString(),
+                "طلب جديد",
+                `يوجد طلب جديد رقم ${createOrder[0].orderNumber}`
+            );
+        }
         res.status(201).json({
             message:"تم انشاء الطلب بنجاح ",
             createOrder
