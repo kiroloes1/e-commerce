@@ -32,7 +32,7 @@ exports.viewOrderById = async (req, res) => {
 
         const order = await Order.findById(id)
             .populate("user", "userName email phoneNumber address")
-            .populate("items.product" ," description")
+            .populate("items.product" ,"description")
 
         if (!order) {
             return res.status(404).json({
