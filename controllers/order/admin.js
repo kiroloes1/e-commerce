@@ -31,7 +31,8 @@ exports.viewOrderById = async (req, res) => {
         const { id } = req.params;
 
         const order = await Order.findById(id)
-            .populate("user", "userName email phoneNumber address");
+            .populate("user", "userName email phoneNumber address")
+            .populate("items.product" ," description")
 
         if (!order) {
             return res.status(404).json({
