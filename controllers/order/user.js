@@ -195,13 +195,17 @@ exports.createOrder=async(req,res)=>{
             role: { $in: ["admin", "superadmin"] }
         })
 
+
+
         for (const admin of admins) {
-            await createNotification(
-                admin._id.toString(),
-                "طلب جديد",
-                `يوجد طلب جديد رقم ${createOrder[0].orderNumber}`
-            );
-        }
+    const order = createOrder[0];
+
+    await createNotification(
+        admin._id.toString(),
+        "طلب جديد",
+        `طلب #${order.orderNumber} | ${order.customerName} | ${order.items.length} منتجات | ${order.finalPrice} ج.م`
+    );
+}
         res.status(201).json({
             message:"تم انشاء الطلب بنجاح ",
             createOrder
