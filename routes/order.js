@@ -15,6 +15,8 @@ router.use(authMiddleware.protected);
 
 // USER ROUTES
 router.post('/', upload.single('file'), orderUser.createOrder);
+router.post('/v2', upload.single('file'), orderUser.createOrderV2);
+
 router.get('/', orderUser.viewMyOrders);
 router.get('/my/:id', orderUser.viewMyOrder);
 router.patch('/cancel/:id', orderUser.cancelOrder);
