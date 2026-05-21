@@ -29,7 +29,6 @@ router.put('/update-password', adminControllers.updatePassword);
 router.put('/updateProfile', userController.updateProfile);
 
 router.get('/getProfile', userController.getProfile);
-router.get('/deleteUser', userController.deleteUser);
 
 
 router.use(role("superadmin" ,"admin"));
@@ -37,6 +36,7 @@ router.patch('/deactivateUserById/:customerId', userController.deactivateUserByI
 router.delete('/deleteUser/:customerId', userController.deleteUser);
 router.get('/getUser/:customerId', userController.getUser);
 router.get('/getUsers', userController.getUsers);
+router.get('/deleteUser', userController.deleteUser);
 
 
 

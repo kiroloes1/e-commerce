@@ -29,7 +29,16 @@ const orderItemSchema = new mongoose.Schema({
 
     subtotal: { 
         type: Number, 
-    }
+    },
+    isOfferItem:{
+        type:Boolean,
+        default:false
+    },
+    offerTitle:{
+        type:String,
+        default:""
+    },
+    
 
 }, { _id: false }); // to reduce size
 

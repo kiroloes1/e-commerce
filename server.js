@@ -28,8 +28,8 @@ const adminRoute =require(`${__dirname}/routes/admin`);
 const notificationRoute =require(`${__dirname}/routes/notification`);
 const reportsRoute =require(`${__dirname}/routes/reports`);
 const backupRoute = require("./backup/backup");
-
-
+const couponRoute = require("./routes/coupon");
+const offerRoute = require("./routes/offer");
 
 require(`${__dirname}/jobs/cleanNotifications`);
 
@@ -52,6 +52,9 @@ app.use('/v1/review',reviewRoute);
 app.use('/v1/admin',adminRoute);
 app.use('/v1/notification',notificationRoute);
 app.use('/v1/reports',reportsRoute);
+app.use("v1/coupons",couponRoute );
+app.use("v1/offer",offerRoute );
+
 app.use("/", backupRoute);
 
 

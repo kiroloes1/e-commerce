@@ -377,7 +377,7 @@ exports.getAllProductsClientsLimit = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const userId = req.query.userId;
 
-    // 🟢 لو مفيش user → fallback مباشر
+
     if (!userId) {
       const products = await productModel.aggregate([
         { $match: { totalUnits: { $gt: 0 } } },
@@ -392,7 +392,7 @@ exports.getAllProductsClientsLimit = async (req, res) => {
       });
     }
 
-    // 🟢 هات categories + productIds بدون populate
+
     const userOrders = await OrderModel.find(
       { user: userId },
       { "items.product": 1, "items.category": 1 }
@@ -824,6 +824,90 @@ exports.deleteProduct = async (req, res) => {
 };
 
 
+// DELETE products
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    if (!productId) {
+      return res.status(400).json({ message: "من فضلك اختر المنتج أولاً" });
+    }
+
+    // Find product first
+    const product = await productModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "هذا المنتج غير موجود" });
+    }
+
+    // Delete product image from Cloudinary if exists
+    if (product.image?.publicId) {
+      await cloudinary.uploader.destroy(product.image.publicId);
+    }
+
+    // Delete product from database
+    await productModel.findByIdAndDelete(productId);
+
+    res.status(200).json({
+      message: "تم حذف المنتج بنجاح",
+      product
+    });
+
+  } catch (err) {
+    return res.status(500).json({ message: "حدث خطأ أثناء حذف المنتج: " + err.message });
+  }
+};
+
+
+exports.deleteAllProducts = async (req, res) => {
+  try {
+
+    // =========================
+    // 1. GET ALL PRODUCTS
+    // =========================
+    const products = await productModel.find();
+
+    // =========================
+    // 2. DELETE ALL IMAGES FROM CLOUDINARY
+    // =========================
+    const publicIds = [];
+
+    products.forEach(product => {
+      // لو صورة واحدة
+      if (product.image?.publicId) {
+        publicIds.push(product.image.publicId);
+      }
+
+      // لو multiple images
+      if (product.images && product.images.length > 0) {
+        product.images.forEach(img => {
+          if (img.publicId) {
+            publicIds.push(img.publicId);
+          }
+        });
+      }
+    });
+
+    // حذف كل الصور مرة واحدة (أفضل أداء)
+    if (publicIds.length > 0) {
+      await cloudinary.api.delete_resources(publicIds);
+    }
+
+    // =========================
+    // 3. DELETE ALL PRODUCTS
+    // =========================
+    await productModel.deleteMany();
+
+    res.status(200).json({
+      message: "تم حذف جميع المنتجات والصور بنجاح",
+      deletedImages: publicIds.length
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "خطأ أثناء حذف جميع المنتجات: " + err.message
+    });
+  }
+};
+
 // ################   update And delete image #####################
 
 // upload image to product
@@ -898,56 +982,5 @@ exports.deleteImageToProduct = async (req, res) => {
 
   } catch (err) {
     return res.status(500).json({ message: "حدث خطأ أثناء حذف الصورة: " + err.message });
-  }
-};
-
-exports.deleteAllProducts = async (req, res) => {
-  try {
-
-    // =========================
-    // 1. GET ALL PRODUCTS
-    // =========================
-    const products = await productModel.find();
-
-    // =========================
-    // 2. DELETE ALL IMAGES FROM CLOUDINARY
-    // =========================
-    const publicIds = [];
-
-    products.forEach(product => {
-      // لو صورة واحدة
-      if (product.image?.publicId) {
-        publicIds.push(product.image.publicId);
-      }
-
-      // لو multiple images
-      if (product.images && product.images.length > 0) {
-        product.images.forEach(img => {
-          if (img.publicId) {
-            publicIds.push(img.publicId);
-          }
-        });
-      }
-    });
-
-    // حذف كل الصور مرة واحدة (أفضل أداء)
-    if (publicIds.length > 0) {
-      await cloudinary.api.delete_resources(publicIds);
-    }
-
-    // =========================
-    // 3. DELETE ALL PRODUCTS
-    // =========================
-    await productModel.deleteMany();
-
-    res.status(200).json({
-      message: "تم حذف جميع المنتجات والصور بنجاح",
-      deletedImages: publicIds.length
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      message: "خطأ أثناء حذف جميع المنتجات: " + err.message
-    });
   }
 };

@@ -36,7 +36,6 @@ exports.viewOrderById = async (req, res) => {
     path: "items.product",
     select: "productName description price image"
   });
-
         if (!order) {
             return res.status(404).json({
                 message: "الطلب غير موجود"

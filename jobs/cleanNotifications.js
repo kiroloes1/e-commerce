@@ -1,17 +1,15 @@
 const cron = require("node-cron");
 const Notification = require(`${__dirname}/../models/notification`);
 
-
-
 cron.schedule("0 0 * * *", async () => {
   try {
-    console.log("Running daily notification cleanup...");
+    console.log("Running notification cleanup job...");
 
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 3); // امسح أقدم من 3 أيام
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     const result = await Notification.deleteMany({
-      createdAt: { $lt: cutoff },
+      createdAt: { $lt: threeDaysAgo },
     });
 
     console.log("Deleted notifications:", result.deletedCount);
@@ -19,6 +17,4 @@ cron.schedule("0 0 * * *", async () => {
   } catch (err) {
     console.log("Cleanup error:", err.message);
   }
-}, {
-  timezone: "Africa/Cairo"
 });

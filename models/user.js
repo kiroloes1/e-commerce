@@ -30,7 +30,7 @@ const userSchema=new mongoose.Schema({
       },
      role:{
         type:String,
-        enum:['superadmin','customer','admin'],
+        enum:["superadmin",'customer','admin'],
         default:'customer'
      },
      
@@ -54,7 +54,7 @@ const userSchema=new mongoose.Schema({
         default:0
         },
         pandding:Date,
-       notes:{type:String}
+        notes:{type:String}
 
 },{timestamps:true});
 
