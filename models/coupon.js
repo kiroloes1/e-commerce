@@ -34,11 +34,10 @@ const CouponSchema = new mongoose.Schema({
         min:0
     },
 
-    user:{
+    userUsage  :[{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
-      
-    }
+    }],
 
 },{
     timestamps:true,
