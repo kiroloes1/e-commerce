@@ -65,6 +65,10 @@ const orderSchema = new mongoose.Schema({
         required: true 
     },
 
+    discout:{
+        type: Number, 
+        default: 0 
+    },
     // customer snapshot
     customerName: {
         type: String,
@@ -88,7 +92,7 @@ const orderSchema = new mongoose.Schema({
     // order status
     status: {
         type: String,
-        enum: ["pending", "confirmed", "shipped", "delivered", "cancelled","rejected"],
+        enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
         default: "pending"
     },
 
@@ -108,6 +112,9 @@ const orderSchema = new mongoose.Schema({
             type:String,
             match: [/^(010|011|012|015)[0-9]{8}$/, 'هذا الرقم غير  موجود في مصر']
         },
+
+        
+        
 
         status: {
             type: String,
