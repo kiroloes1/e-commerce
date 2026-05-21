@@ -29,6 +29,7 @@ router.put('/update-password', adminControllers.updatePassword);
 router.put('/updateProfile', userController.updateProfile);
 
 router.get('/getProfile', userController.getProfile);
+router.get('/deleteUser', userController.deleteUser);
 
 
 router.use(role("superadmin" ,"admin"));
