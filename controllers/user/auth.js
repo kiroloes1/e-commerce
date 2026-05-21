@@ -316,3 +316,30 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: 'خطأ داخلي في الخادم', error: err.message });
   }
 };
+
+
+// delete user
+exports.deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    const user = await UserModel.findByIdAndDelete(userId);
+
+    
+    if (!user) {
+      return res.status(404).json({ message: "هذا الحساب غير موجود!" });
+    }
+
+    await cartModel.deleteOne({ user: customerId });
+
+    res.status(200).json({
+      message: "تم حذف الحساب بنجاح",
+      user
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "حدث خطأ أثناء الحذف: " + err.message
+    });
+  }
+};
