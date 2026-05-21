@@ -47,35 +47,40 @@ exports.createCoupon = async (req, res) => {
 
 
 // Get All Coupons
-exports.getCoupons = async(req,res)=>{
+exports.getCoupons = async (req, res) => {
+  try {
+    let coupons = await Coupon.find().populate("user", "name email");
 
-    try{
+    // =========================
+    // DELETE INVALID COUPONS
+    // =========================
+    const invalidCoupons = coupons.filter(
+      (c) => !c.isValid
+    );
 
-        const coupons =
-        await Coupon.find()
-        .populate("user","name email");
-
-        res.status(200).json({
-
-            success:true,
-            count:coupons.length,
-            coupons
-
-        });
-
+    if (invalidCoupons.length > 0) {
+      await Coupon.deleteMany({
+        _id: { $in: invalidCoupons.map(c => c._id) }
+      });
     }
 
-    catch(error){
+    // =========================
+    // FILTER VALID ONLY FOR RESPONSE
+    // =========================
+    coupons = coupons.filter(c => c.isValid);
 
-        res.status(500).json({
+    res.status(200).json({
+      success: true,
+      count: coupons.length,
+      coupons,
+    });
 
-            success:false,
-            message:error.message
-
-        });
-
-    }
-
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };
 
 
@@ -218,72 +223,51 @@ exports.deleteCoupon =async(req,res)=>{
 
 
 // Apply Coupon
-exports.applyCoupon =async(req,res)=>{
+exports.applyCoupon = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const { userId } = req.user;
 
-    try{
+    const coupon = await Coupon.findOne({
+      code: code.toUpperCase(),
+    });
 
-        const { code } = req.body;
-        const coupon =
-        await Coupon.findOne({
-            code:
-            code.toUpperCase()
-
-        });
-
-        if(!coupon){
-
-            return res.status(404)
-            .json({
-
-                success:false,
-                message:"Coupon invalid"
-
-            });
-
-        }
-
-
-        if(!coupon.isValid){
-
-            return res.status(400)
-            .json({
-
-                success:false,
-                message:
-                "Coupon expired or limit reached"
-
-            });
-
-        }
-
-
-        coupon.usedCount += 1;
-
-        await coupon.save();
-
-        res.status(200).json({
-
-            success:true,
-
-            discount:
-            coupon.discount,
-
-            message:
-            "Coupon applied"
-
-        });
-
+    if (!coupon) {
+      return res.status(404).json({
+        success: false,
+        message: "كود الكوبون غير صحيح",
+      });
     }
 
-    catch(error){
-
-        res.status(500).json({
-
-            success:false,
-            message:error.message
-
-        });
-
+    if (!coupon.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: "الكوبون منتهي أو تم استخدامه بالكامل",
+      });
     }
 
+
+    if (coupon.userUsage.includes(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "لقد استخدمت هذا الكوبون من قبل",
+      });
+    }
+
+    coupon.usedCount += 1;
+    coupon.userUsage.push(userId);
+
+    await coupon.save();
+
+    res.status(200).json({
+      success: true,
+      discount: coupon.discount,
+      message: "تم تطبيق الكوبون بنجاح",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };
