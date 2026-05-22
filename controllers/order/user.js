@@ -231,6 +231,260 @@ exports.createOrder=async(req,res)=>{
 
 
 // Create order
+// Create order
+// exports.createOrderV2 = async (req, res) => {
+//   let session;
+
+//   try {
+//     const { userId } = req.user;
+
+//     const { customerName, phone } = req.body;
+
+//     const items =
+//       typeof req.body.items === "string"
+//         ? JSON.parse(req.body.items)
+//         : req.body.items || [];
+
+//     const address =
+//       typeof req.body.address === "string"
+//         ? JSON.parse(req.body.address)
+//         : req.body.address || {};
+
+//     const payment =
+//       typeof req.body.payment === "string"
+//         ? JSON.parse(req.body.payment)
+//         : req.body.payment || {};
+
+//     if (items.length == 0) {
+//       return res.status(400).json({
+//         message: "يجب علي الاقل لاتمام الطلب يوجد منتج واحد ! ",
+//       });
+//     }
+
+//     if (
+//       !customerName ||
+//       !phone ||
+//       !address?.city ||
+//       !address?.street ||
+//       !address?.building
+//     ) {
+//       return res.status(400).json({
+//         message: "يجب ملئ المعلومات الشخصيه لأتمام الطلب",
+//       });
+//     }
+
+//     if (payment?.method === "wallet") {
+//       if (!req.file) {
+//         return res.status(400).json({
+//           message: " يجب عليك ارفاق اثبات الدفع اسكرين شوت",
+//         });
+//       }
+//       if (!payment?.walletPhone) {
+//         return res.status(400).json({
+//           message: "يجب عليك ارفاق اثبات الدفع رقم المحفظه المحول منها",
+//         });
+//       }
+//     }
+
+//     session = await mongoose.startSession();
+//     session.startTransaction();
+
+//     const cartExist = await Cart.findOne({ user: userId }).session(session);
+
+//     for (const item of items) {
+//       if (!item.product || !item.quantity || !item.price) {
+//         throw new Error("يجب ارسال بيانات الطلب مع الطلب");
+//       }
+
+//       if (isNaN(item.quantity) || isNaN(item.price)) {
+//         throw new Error("الارقام غير صحيحه ");
+//       }
+
+//       const productRef = await Product.findById(item.product).session(
+//         session
+//       );
+
+//       if (!productRef) {
+//         throw new Error(`Product not found: ${item.product}`);
+//       }
+
+//       // =========================
+//       // OFFER PRICE ONLY (NO STOCK CHANGE LOGIC HERE)
+//       // =========================
+//       let price = item.price;
+//       let isOfferItem = item.isOfferItem === true;
+//       let offerTitle = "";
+
+//       if (isOfferItem) {
+//         const offer = await Offer.findOne({
+//           "products.product": item.product,
+//           active: true,
+//         }).session(session);
+
+//         if (offer) {
+//           const offerProduct = offer.products.find(
+//             (p) =>
+//               p.product.toString() === item.product.toString()
+//           );
+
+//           if (offerProduct) {
+//             price = offerProduct.offerPrice;
+//             offerTitle = offer.title;
+//           }
+//         }
+//       }
+
+//       // =========================
+//       // STOCK LOGIC (UNCHANGED - ALWAYS PRODUCT STOCK)
+//       // =========================
+//       if (item.unit_type == "قطعة") {
+//         if (productRef.totalUnits < item.quantity) {
+//           await Cart.updateOne(
+//             { _id: cartExist._id },
+//             {
+//               $pull: {
+//                 items: {
+//                   product: new mongoose.Types.ObjectId(item.product),
+//                 },
+//               },
+//             }
+//           );
+//           throw Error(" الكميه المطلوبه اكبر من المخزون ");
+//         } else {
+//           productRef.totalUnits -= item.quantity;
+
+//           if (productRef.unit_type == "كرتونة") {
+//             const count = Math.floor(
+//               productRef.totalUnits /
+//                 productRef.unitsPerPackage
+//             );
+//             productRef.availableQuantity = count;
+//           } else {
+//             productRef.availableQuantity -= item.quantity;
+//           }
+//         }
+//       } else if (item.unit_type == "كرتونة") {
+//         if (productRef.availableQuantity < item.quantity) {
+//           await Cart.updateOne(
+//             { _id: cartExist._id },
+//             {
+//               $pull: {
+//                 items: {
+//                   product: new mongoose.Types.ObjectId(item.product),
+//                 },
+//               },
+//             }
+//           );
+//           throw Error(" الكميه المطلوبه اكبر من المخزون ");
+//         } else {
+//           productRef.availableQuantity -= item.quantity;
+//           productRef.totalUnits -=
+//             item.quantity *
+//             productRef.unitsPerPackage;
+//         }
+//       }
+
+//       productRef._skipInventoryHook = true;
+//       await productRef.save({ session });
+
+//       // =========================
+//       // FINAL ITEM CALCULATION
+//       // =========================
+//       item.price = price;
+//       item.subtotal =
+//         Number(item.quantity) * Number(price);
+
+//       item.isOfferItem = isOfferItem;
+//       item.offerTitle = offerTitle;
+//     }
+
+//     const totalPrice = items.reduce(
+//       (acc, curr) =>
+//         acc + curr.quantity * curr.price,
+//       0
+//     );
+
+//     await Cart.findOneAndUpdate(
+//       { user: userId },
+//       { $set: { items: [] } },
+//       { session }
+//     );
+
+//     let result;
+
+//     if (payment.method === "wallet") {
+//       if (!req.file) {
+//         throw new Error("يجب ارفاق صورة اثبات الدفع");
+//       }
+
+//       result =
+//         await uploadToCloud.uploadToCloud(
+//           req.file,
+//           "wallet/proofImageOrder"
+//         );
+//     }
+
+//     const createOrder = await Order.create(
+//       [
+//         {
+//           user: userId,
+//           customerName,
+//           items,
+//           totalPrice,
+//           shippingPrice:
+//             req.body.shippingPrice || 0,
+//           phone,
+//           discout: req.body.discount || 0,
+//           address,
+//           payment: {
+//             method: payment.method || "cash",
+//             walletPhone:
+//               payment.walletPhone,
+//             proofImage: result,
+//           },
+//           finalPrice:
+//             (req.body.shippingPrice || 0) +
+//             totalPrice -
+//             (req.body.discount || 0),
+//         },
+//       ],
+//       { session }
+//     );
+
+//     await session.commitTransaction();
+//     session.endSession();
+
+//     const admins = await UserModel.find({
+//       role: { $in: ["admin", "superadmin"] },
+//     });
+
+//     for (const admin of admins) {
+//       const order = createOrder[0];
+
+//       await createNotification(
+//         admin._id.toString(),
+//         "طلب جديد",
+//         `طلب #${order.orderNumber} | ${order.customerName} | ${order.items.length} منتجات | ${order.finalPrice} ج.م`
+//       );
+//     }
+
+//     res.status(201).json({
+//       message: "تم انشاء الطلب بنجاح ",
+//       createOrder,
+//     });
+//   } catch (err) {
+//     if (session) {
+//       await session.abortTransaction();
+//       session.endSession();
+//     }
+
+//     res.status(500).json({
+//       message: err.message,
+//     });
+//   }
+// };
+
+// Create order (Fixed & Clean Version)
 exports.createOrderV2 = async (req, res) => {
   let session;
 
@@ -254,9 +508,12 @@ exports.createOrderV2 = async (req, res) => {
         ? JSON.parse(req.body.payment)
         : req.body.payment || {};
 
-    if (items.length == 0) {
+    // =========================
+    // VALIDATION
+    // =========================
+    if (items.length === 0) {
       return res.status(400).json({
-        message: "يجب علي الاقل لاتمام الطلب يوجد منتج واحد ! ",
+        message: "يجب إضافة منتج واحد على الأقل لإتمام الطلب",
       });
     }
 
@@ -268,49 +525,65 @@ exports.createOrderV2 = async (req, res) => {
       !address?.building
     ) {
       return res.status(400).json({
-        message: "يجب ملئ المعلومات الشخصيه لأتمام الطلب",
+        message: "يجب ملء البيانات الشخصية لإتمام الطلب",
       });
     }
 
     if (payment?.method === "wallet") {
       if (!req.file) {
         return res.status(400).json({
-          message: " يجب عليك ارفاق اثبات الدفع اسكرين شوت",
+          message: "يجب إرفاق إثبات الدفع",
         });
       }
       if (!payment?.walletPhone) {
         return res.status(400).json({
-          message: "يجب عليك ارفاق اثبات الدفع رقم المحفظه المحول منها",
+          message: "يجب إدخال رقم المحفظة المحول منها",
         });
       }
     }
 
+    // =========================
+    // CLEAN NUMBERS (IMPORTANT FIX)
+    // =========================
+    const shippingPrice = Number(req.body.shippingPrice || 0);
+    const discount = Number(req.body.discount || 0);
+
+    // =========================
+    // START TRANSACTION
+    // =========================
     session = await mongoose.startSession();
     session.startTransaction();
 
     const cartExist = await Cart.findOne({ user: userId }).session(session);
 
+    if (!cartExist) {
+      throw new Error("Cart not found for this user");
+    }
+
+    // =========================
+    // PROCESS ITEMS
+    // =========================
     for (const item of items) {
-      if (!item.product || !item.quantity || !item.price) {
-        throw new Error("يجب ارسال بيانات الطلب مع الطلب");
+      if (!item.product || !item.quantity || item.price == null) {
+        throw new Error("بيانات المنتج غير مكتملة");
       }
 
-      if (isNaN(item.quantity) || isNaN(item.price)) {
-        throw new Error("الارقام غير صحيحه ");
+      const quantity = Number(item.quantity);
+      let price = Number(item.price);
+
+      if (isNaN(quantity) || isNaN(price)) {
+        throw new Error("الأرقام غير صحيحة");
       }
 
-      const productRef = await Product.findById(item.product).session(
-        session
-      );
+      const productRef = await Product.findById(item.product).session(session);
 
       if (!productRef) {
         throw new Error(`Product not found: ${item.product}`);
       }
 
       // =========================
-      // OFFER PRICE ONLY (NO STOCK CHANGE LOGIC HERE)
+      // OFFER LOGIC
       // =========================
-      let price = item.price;
       let isOfferItem = item.isOfferItem === true;
       let offerTitle = "";
 
@@ -322,22 +595,21 @@ exports.createOrderV2 = async (req, res) => {
 
         if (offer) {
           const offerProduct = offer.products.find(
-            (p) =>
-              p.product.toString() === item.product.toString()
+            (p) => p.product.toString() === item.product.toString()
           );
 
           if (offerProduct) {
-            price = offerProduct.offerPrice;
+            price = Number(offerProduct.offerPrice);
             offerTitle = offer.title;
           }
         }
       }
 
       // =========================
-      // STOCK LOGIC (UNCHANGED - ALWAYS PRODUCT STOCK)
+      // STOCK LOGIC
       // =========================
-      if (item.unit_type == "قطعة") {
-        if (productRef.totalUnits < item.quantity) {
+      if (item.unit_type === "قطعة") {
+        if (productRef.totalUnits < quantity) {
           await Cart.updateOne(
             { _id: cartExist._id },
             {
@@ -348,22 +620,21 @@ exports.createOrderV2 = async (req, res) => {
               },
             }
           );
-          throw Error(" الكميه المطلوبه اكبر من المخزون ");
-        } else {
-          productRef.totalUnits -= item.quantity;
 
-          if (productRef.unit_type == "كرتونة") {
-            const count = Math.floor(
-              productRef.totalUnits /
-                productRef.unitsPerPackage
-            );
-            productRef.availableQuantity = count;
-          } else {
-            productRef.availableQuantity -= item.quantity;
-          }
+          throw new Error("الكمية المطلوبة أكبر من المخزون");
         }
-      } else if (item.unit_type == "كرتونة") {
-        if (productRef.availableQuantity < item.quantity) {
+
+        productRef.totalUnits -= quantity;
+
+        if (productRef.unit_type === "كرتونة") {
+          productRef.availableQuantity = Math.floor(
+            productRef.totalUnits / productRef.unitsPerPackage
+          );
+        } else {
+          productRef.availableQuantity -= quantity;
+        }
+      } else if (item.unit_type === "كرتونة") {
+        if (productRef.availableQuantity < quantity) {
           await Cart.updateOne(
             { _id: cartExist._id },
             {
@@ -374,13 +645,12 @@ exports.createOrderV2 = async (req, res) => {
               },
             }
           );
-          throw Error(" الكميه المطلوبه اكبر من المخزون ");
-        } else {
-          productRef.availableQuantity -= item.quantity;
-          productRef.totalUnits -=
-            item.quantity *
-            productRef.unitsPerPackage;
+
+          throw new Error("الكمية المطلوبة أكبر من المخزون");
         }
+
+        productRef.availableQuantity -= quantity;
+        productRef.totalUnits -= quantity * productRef.unitsPerPackage;
       }
 
       productRef._skipInventoryHook = true;
@@ -389,62 +659,67 @@ exports.createOrderV2 = async (req, res) => {
       // =========================
       // FINAL ITEM CALCULATION
       // =========================
+      item.quantity = quantity;
       item.price = price;
-      item.subtotal =
-        Number(item.quantity) * Number(price);
-
+      item.subtotal = quantity * price;
       item.isOfferItem = isOfferItem;
       item.offerTitle = offerTitle;
     }
 
+    // =========================
+    // TOTAL PRICE
+    // =========================
     const totalPrice = items.reduce(
-      (acc, curr) =>
-        acc + curr.quantity * curr.price,
+      (acc, curr) => acc + curr.quantity * curr.price,
       0
     );
 
+    // =========================
+    // CLEAR CART
+    // =========================
     await Cart.findOneAndUpdate(
       { user: userId },
       { $set: { items: [] } },
       { session }
     );
 
-    let result;
+    // =========================
+    // WALLET UPLOAD
+    // =========================
+    let proofImage = null;
 
     if (payment.method === "wallet") {
-      if (!req.file) {
-        throw new Error("يجب ارفاق صورة اثبات الدفع");
-      }
-
-      result =
-        await uploadToCloud.uploadToCloud(
-          req.file,
-          "wallet/proofImageOrder"
-        );
+      proofImage = await uploadToCloud.uploadToCloud(
+        req.file,
+        "wallet/proofImageOrder"
+      );
     }
 
+    // =========================
+    // FINAL PRICE (FIXED)
+    // =========================
+    const finalPrice = shippingPrice + totalPrice - discount;
+
+    // =========================
+    // CREATE ORDER
+    // =========================
     const createOrder = await Order.create(
       [
         {
           user: userId,
           customerName,
+          phone,
           items,
           totalPrice,
-          shippingPrice:
-            req.body.shippingPrice || 0,
-          phone,
-          discout: req.body.discount || 0,
+          shippingPrice,
+          discount, // FIXED NAME
           address,
           payment: {
             method: payment.method || "cash",
-            walletPhone:
-              payment.walletPhone,
-            proofImage: result,
+            walletPhone: payment.walletPhone || "",
+            proofImage,
           },
-          finalPrice:
-            (req.body.shippingPrice || 0) +
-            totalPrice -
-            (req.body.discount || 0),
+          finalPrice,
         },
       ],
       { session }
@@ -453,13 +728,16 @@ exports.createOrderV2 = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
+    // =========================
+    // NOTIFICATIONS
+    // =========================
     const admins = await UserModel.find({
       role: { $in: ["admin", "superadmin"] },
     });
 
-    for (const admin of admins) {
-      const order = createOrder[0];
+    const order = createOrder[0];
 
+    for (const admin of admins) {
       await createNotification(
         admin._id.toString(),
         "طلب جديد",
@@ -467,8 +745,8 @@ exports.createOrderV2 = async (req, res) => {
       );
     }
 
-    res.status(201).json({
-      message: "تم انشاء الطلب بنجاح ",
+    return res.status(201).json({
+      message: "تم إنشاء الطلب بنجاح",
       createOrder,
     });
   } catch (err) {
@@ -477,7 +755,7 @@ exports.createOrderV2 = async (req, res) => {
       session.endSession();
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       message: err.message,
     });
   }
