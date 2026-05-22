@@ -140,10 +140,9 @@ exports.updateCart = async (req, res) => {
 
     let cart = await CartModel.findOne({ user: userId });
 
+
     if (!cart) {
-      return res.status(404).json({
-        message: "Cart not found"
-      });
+      cart = new CartModel({ user: userId, items: [] });
     }
 
     const newItems = [];
