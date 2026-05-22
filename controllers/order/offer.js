@@ -163,14 +163,7 @@ exports.updateOffer = async (req, res) => {
       });
     }
 
-    if (req.file) {
-      const result = await uploadToCloud.uploadToCloud(req.file, "offers");
 
-      offer.image = {
-        url: result.secure_url,
-        publicId: result.public_id,
-      };
-    }
 
     offer.title = req.body.title || offer.title;
 
@@ -183,6 +176,7 @@ exports.updateOffer = async (req, res) => {
     offer.startDate = req.body.startDate || offer.startDate;
     offer.endDate = req.body.endDate || offer.endDate;
     offer.totalLimit = req.body.totalLimit || offer.totalLimit;
+    offer.image.url = req.body.imageUrl 
 
     await offer.save();
 
