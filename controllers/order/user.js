@@ -698,7 +698,7 @@ exports.createOrderV2 = async (req, res) => {
     // =========================
     // FINAL PRICE (FIXED)
     // =========================
-    const finalPrice = shippingPrice + totalPrice - discount;
+   const finalPrice = Math.max(0, (shippingPrice + totalPrice) - discount);
 
     // =========================
     // CREATE ORDER
