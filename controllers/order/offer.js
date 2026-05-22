@@ -80,22 +80,15 @@ exports.searchProducts = async (req, res) => {
 // Create Offer
 exports.createOffer = async (req, res) => {
   try {
-    const { title, products, startDate, endDate, totalLimit } = req.body;
+    const { title, products, startDate, endDate, totalLimit,image } = req.body;
 
     if (!title || !products || products.length === 0) {
       return res.status(400).json({ message: "بيانات المجلة غير مكتملة" });
     }
 
-    let image = {};
+    
 
-    if (req.file) {
-      const result = await uploadToCloud.uploadToCloud(req.file, "offers");
 
-      image = {
-        url: result.secure_url,
-        publicId: result.public_id,
-      };
-    }
 
     const offer = await Offer.create({
       title,
