@@ -699,7 +699,7 @@ exports.createOrderV2 = async (req, res) => {
     // =========================
     const discount = Number(req.body.discount || 0);
       
-   const finalPrice = Math.max(0, (shippingPrice + totalPrice) - discount);
+   const finalPrice = Math.max(0, (shippingPrice + totalPrice));
 
     // =========================
     // CREATE ORDER
@@ -720,7 +720,7 @@ exports.createOrderV2 = async (req, res) => {
             walletPhone: payment.walletPhone || "",
             proofImage,
           },
-          finalPrice,
+          finalPrice:finalPrice -  Number(req.body.discount || 0),
         },
       ],
       { session }
