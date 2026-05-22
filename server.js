@@ -30,7 +30,7 @@ const reportsRoute =require(`${__dirname}/routes/reports`);
 const backupRoute = require("./backup/backup");
 const couponRoute = require("./routes/coupon");
 const offerRoute = require("./routes/offer");
-const compoOffer = require("./routes/offer");
+const compoOffer = require("./routes/compoOffer");
 
 
 
