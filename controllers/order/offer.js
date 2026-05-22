@@ -241,3 +241,98 @@ exports.toggleOfferStatus = async (req, res) => {
     });
   }
 };
+
+exports.checkOfferUsage = async (req, res) => {
+
+  try {
+
+    const { userId } = req.user;
+
+    const {
+      offerId,
+      productId
+    } = req.params;
+
+    const offer =
+      await Offer.findById(offerId);
+
+    if (!offer) {
+
+      return res.status(404).json({
+        message:"العرض غير موجود"
+      });
+
+    }
+
+    const offerProduct =
+      offer.products.find(
+
+        p =>
+        p.product.toString() ===
+        productId
+
+      );
+
+    if (!offerProduct){
+
+      return res.status(404).json({
+        message:
+        "المنتج غير موجود داخل العرض"
+      });
+
+    }
+
+    const customerUsage =
+      offer.customersUsed.find(
+
+        c =>
+
+        c.id.toString() ===
+        userId.toString()
+
+      );
+
+    const usedCount =
+      customerUsage?.count || 0;
+
+    const remaining =
+      Math.max(
+        0,
+        offerProduct.maxPerUser -
+        usedCount
+      );
+
+    const canTake =
+      remaining > 0;
+
+    return res.status(200).json({
+
+      message:
+      "تم جلب بيانات العرض",
+
+      data:{
+
+        maxPerUser:
+        offerProduct.maxPerUser,
+
+        usedCount,
+
+        remaining,
+
+        canTake
+
+      }
+
+    });
+
+  }
+
+  catch(err){
+
+    return res.status(500).json({
+      message:err.message
+    });
+
+  }
+
+};
