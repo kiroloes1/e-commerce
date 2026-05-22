@@ -26,6 +26,8 @@ router.use(authMiddleware.protected);
 
 // update password
 router.put('/update-password', adminControllers.updatePassword);
+router.delete('/', adminControllers.deleteUser);
+
 router.put('/updateProfile', userController.updateProfile);
 
 router.get('/getProfile', userController.getProfile);
