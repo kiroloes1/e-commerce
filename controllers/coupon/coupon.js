@@ -49,7 +49,7 @@ exports.createCoupon = async (req, res) => {
 // Get All Coupons
 exports.getCoupons = async (req, res) => {
   try {
-    let coupons = await Coupon.find().populate("user", "name email");
+    let coupons = await Coupon.find().populate("userUsage", "name email");
 
     // =========================
     // DELETE INVALID COUPONS
@@ -91,7 +91,7 @@ exports.getCoupon = async(req,res)=>{
 
         const coupon =
         await Coupon.findById(req.params.id)
-        .populate("user","name email");
+        .populate("userUsage","name email");
 
         if(!coupon){
 
