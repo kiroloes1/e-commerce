@@ -231,7 +231,6 @@ exports.createOrder=async(req,res)=>{
 
 
 // Create order
-// Create order
 // exports.createOrderV2 = async (req, res) => {
 //   let session;
 
@@ -546,6 +545,7 @@ exports.createOrderV2 = async (req, res) => {
     // CLEAN NUMBERS (IMPORTANT FIX)
     // =========================
     const shippingPrice = Number(req.body.shippingPrice || 0);
+    // const discount = Number(req.body.discount || 0);
 
     // =========================
     // START TRANSACTION
@@ -697,9 +697,11 @@ exports.createOrderV2 = async (req, res) => {
     // =========================
     // FINAL PRICE (FIXED)
     // =========================
-    const discount = Number(req.body.discount || 0);
-      
-   const finalPrice = Math.max(0, (shippingPrice + totalPrice));
+const discount = Number(req.body.discount || 0);
+
+const subtotal = totalPrice + shippingPrice;
+
+const finalPrice = Math.max(0, subtotal - discount);
 
     // =========================
     // CREATE ORDER
@@ -720,7 +722,7 @@ exports.createOrderV2 = async (req, res) => {
             walletPhone: payment.walletPhone || "",
             proofImage,
           },
-          finalPrice:finalPrice -  Number(req.body.discount ),
+          finalPrice,
         },
       ],
       { session }
