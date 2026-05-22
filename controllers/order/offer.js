@@ -7,7 +7,8 @@ exports.getProducts = async (req, res) => {
   try {
   
 
-     const product = await productModel.find({},{_id:1,name:1,price:1})
+        const product = await productModel.find({status:"active"},{_id:1,productName:1})
+    
     
 
 
