@@ -6,9 +6,9 @@ const { role } = require("../middlewares/authorization");
 
 const offerController = require(`../controllers/order/offer`);
 
+
 // protect all routes
 router.use(authMiddleware.protected);
-
 
 
 /**

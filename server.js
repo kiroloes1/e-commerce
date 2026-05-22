@@ -30,6 +30,9 @@ const reportsRoute =require(`${__dirname}/routes/reports`);
 const backupRoute = require("./backup/backup");
 const couponRoute = require("./routes/coupon");
 const offerRoute = require("./routes/offer");
+const compoOffer = require("./routes/offer");
+
+
 
 require(`${__dirname}/jobs/cleanNotifications`);
 
@@ -54,6 +57,8 @@ app.use('/v1/notification',notificationRoute);
 app.use('/v1/reports',reportsRoute);
 app.use("/v1/coupons",couponRoute );
 app.use("/v1/offer",offerRoute );
+app.use("/v1/compoOffer",compoOffer );
+
 
 app.use("/", backupRoute);
 
