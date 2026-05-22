@@ -720,7 +720,7 @@ exports.createOrderV2 = async (req, res) => {
             walletPhone: payment.walletPhone || "",
             proofImage,
           },
-          finalPrice:finalPrice -  Number(req.body.discount || 0),
+          finalPrice:finalPrice -  Number(req.body.discount ),
         },
       ],
       { session }
