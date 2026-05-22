@@ -46,8 +46,11 @@ const OfferSchema = new mongoose.Schema({
 
     customersUsed:[{
      
-        id:{type:mongoose.Schema.Types.ObjectId, ref:"User"},   
+        id:{type:mongoose.Schema.Types.ObjectId, ref:"User"},
+        order:[{
+            product:{type:mongoose.Schema.Types.ObjectId, ref:"Product"},
             count:{type:Number, default:0}
+        }]   
  
 
     }],
