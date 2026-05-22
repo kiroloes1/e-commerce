@@ -541,23 +541,35 @@ exports.createOrderV2 = async (req, res) => {
             // تحديث عدد المبيعات في المجلة فوراً داخل الـ Transaction
             offer.soldCount += quantity || 1;
 
+const existCustomerUsed = offer.customersUsed.find(
+  e => e.id.toString() === userId.toString()
+);
 
-            const existCustomerUsed =offer.customersUsed.find(
-            e => e.id.toString() === userId.toString()
-            );
+if (existCustomerUsed) {
+  const existProduct = existCustomerUsed.order.find(
+    o => o.product.toString() === productRef._id.toString()
+  );
 
-            if (existCustomerUsed) {
+  if (existProduct) {
+    existProduct.count += quantity;
+  } else {
+    existCustomerUsed.order.push({
+      product: productRef._id,
+      count: quantity
+    });
+  }
 
-              existCustomerUsed.count += quantity;
-
-            } else {
-
-              offer.customersUsed.push({
-                id: userId,
-                count: quantity
-              });
-
-            }
+} else {
+  offer.customersUsed.push({
+    id: userId,
+    order: [
+      {
+        product: productRef._id,
+        count: quantity
+      }
+    ]
+  });
+}
 
             await offer.save({ session });
           }
