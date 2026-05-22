@@ -329,7 +329,7 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: "هذا الحساب غير موجود!" });
     }
 
-    await cartModel.deleteOne({ user: customerId });
+    await cartModel.deleteOne({ user: userId });
 
     res.status(200).json({
       message: "تم حذف الحساب بنجاح",
