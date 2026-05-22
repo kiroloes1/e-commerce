@@ -728,6 +728,14 @@ const finalPrice = Math.max(0, subtotal - discount);
       { session }
     );
 
+      console.log({
+ totalPrice,
+ shippingPrice,
+ discount,
+ subtotal,
+ finalPrice
+});
+
     await session.commitTransaction();
     session.endSession();
 
