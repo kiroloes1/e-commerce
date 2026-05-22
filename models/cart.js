@@ -9,7 +9,9 @@ const cartSchema = new mongoose.Schema({
             unit_type: { 
         type: String,
         required: true   
-    }
+    },
+    isOffer: { type: Boolean, default: false }, // الحقل الجديد
+  offerPrice: { type: Number, default: null }
         }
     ]
 }, { timestamps: true }); 
