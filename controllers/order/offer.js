@@ -1,6 +1,27 @@
 const Offer = require("../../models/offer");
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`)
 const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
+const productModel = require(`${__dirname}/../../models/product`);
+// GET  product  to admin
+exports.getProducts = async (req, res) => {
+  try {
+  
+
+     const product = await productModel.find({},{_id:1,name:1,price:1})
+    
+
+
+    return res.status(200).json({
+      message: "تم جلب المنتج بنجاح",
+      data: product
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      message: err.message
+    });
+  }
+};
 // Create Offer
 exports.createOffer = async (req, res) => {
   try {
