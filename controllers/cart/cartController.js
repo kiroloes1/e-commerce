@@ -84,10 +84,59 @@ exports.addToCart = async (req, res) => {
 };
 
 // update
+// exports.updateCart = async (req, res) => {
+//   try {
+//     const { userId } = req.user;
+//     const { items } = req.body;
+
+//     let cart = await CartModel.findOne({ user: userId });
+
+//     if (!cart) {
+//       return res.status(404).json({
+//         message: "Cart not found"
+//       });
+//     }
+
+//     const newItems = [];
+
+//     for (const item of items) {
+//       const qty = Number(item.quantity);
+//       if (!qty || isNaN(qty)) continue;
+
+//       const product = await ProductModel.findById(item.product);
+//       if (!product) continue;
+
+
+
+//       newItems.push({
+//         product: item.product,
+//         unit_type: item.unit_type,
+//         quantity: qty 
+//       });
+//     }
+
+//     cart.items = newItems;
+
+//     await cart.save();
+
+//     return res.status(200).json({
+//       message: "Cart replaced with validation",
+//       cart
+//     });
+
+//   } catch (err) {
+//     return res.status(500).json({
+//       message: "Server error",
+//       error: err.message
+//     });
+//   }
+// };
+
+// update cart with offers support
 exports.updateCart = async (req, res) => {
   try {
     const { userId } = req.user;
-    const { items } = req.body;
+    const { items } = req.body; 
 
     let cart = await CartModel.findOne({ user: userId });
 
@@ -101,28 +150,47 @@ exports.updateCart = async (req, res) => {
 
     for (const item of items) {
       const qty = Number(item.quantity);
-      if (!qty || isNaN(qty)) continue;
+      if (!qty || isNaN(qty) || qty <= 0) continue;
 
       const product = await ProductModel.findById(item.product);
       if (!product) continue;
 
 
+      const isOffer = item.isOffer === true || item.isOffer === 'true';
+      let offerPrice = null;
+
+      if (isOffer && item.offerPrice) {
+
+        offerPrice = Number(item.offerPrice);
+      }
 
       newItems.push({
         product: item.product,
         unit_type: item.unit_type,
-        quantity: qty 
+        quantity: qty,
+        isOffer: isOffer,       
+        offerPrice: offerPrice   || null    
       });
     }
 
+
     cart.items = newItems;
 
+  
     await cart.save();
 
-    return res.status(200).json({
-      message: "Cart replaced with validation",
+    if(isOffer){
+         return res.status(200).json({
+      message: "تم تحديث السلة بنجاح مع دعم العروض",
       cart
     });
+    }
+
+        return res.status(200).json({
+      message: "تم تحديث السلة بنجاح   ",
+      cart
+    });
+
 
   } catch (err) {
     return res.status(500).json({
@@ -131,6 +199,7 @@ exports.updateCart = async (req, res) => {
     });
   }
 };
+
 // delete cart by user must be login first
 exports.deleteCartByUser = async (req, res) => {
     try {
