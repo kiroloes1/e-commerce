@@ -15,6 +15,7 @@ const offerController = require(`../controllers/order/offer`);
 router.get("/", offerController.getOffers);
 
 router.get("/getProducts", offerController.getProducts);
+router.get("/searchProducts", offerController.searchProducts);
 
 /**
  * GET SINGLE OFFER
