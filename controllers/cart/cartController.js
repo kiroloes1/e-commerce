@@ -169,7 +169,8 @@ exports.updateCart = async (req, res) => {
         unit_type: item.unit_type,
         quantity: qty,
         isOffer: isOffer,       
-        offerPrice: offerPrice || null    
+        offerPrice: offerPrice || null   ,
+        maxPerUser: item.maxPerUser ? Number(item.maxPerUser) : null 
       });
     }
 
