@@ -11,7 +11,8 @@ const cartSchema = new mongoose.Schema({
         required: true   
     },
     isOffer: { type: Boolean, default: false }, // الحقل الجديد
-  offerPrice: { type: Number, default: null }
+  offerPrice: { type: Number, default: null },
+  maxPerUser: { type: Number, default: null }
         }
     ]
 }, { timestamps: true }); 
