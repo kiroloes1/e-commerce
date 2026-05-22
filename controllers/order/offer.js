@@ -23,6 +23,32 @@ exports.getProducts = async (req, res) => {
     });
   }
 };
+
+
+// get product by search
+exports.searchProducts = async (req, res) => {
+  try {
+    const { query } = req.query;
+    const products = await productModel.find(
+      {
+        productName: { $regex: query, $options: "i" },
+        status: "active",
+      },
+      { _id: 1, productName: 1, description: 1 }
+    );  
+    return res.status(200).json({
+      message: "تم جلب المنتجات بنجاح",
+      data: products,
+    });
+  }
+
+  catch (err) {
+    return res.status(500).json({
+      message: err.message
+    });
+  }
+
+  
 // Create Offer
 exports.createOffer = async (req, res) => {
   try {
