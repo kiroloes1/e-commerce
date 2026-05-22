@@ -74,7 +74,7 @@ const orderSchema = new mongoose.Schema({
         required: true 
     },
 
-    discout:{
+    discount:{
         type: Number, 
         default: 0 
     },
