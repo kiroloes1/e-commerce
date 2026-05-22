@@ -16,6 +16,9 @@ router.get("/", offerController.getOffers);
 
 router.get("/getProducts", offerController.getProducts);
 router.get("/searchProducts", offerController.searchProducts);
+router.get("/checkOfferUsage", offerController.checkOfferUsage);
+
+
 
 /**
  * GET SINGLE OFFER
