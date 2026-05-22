@@ -160,10 +160,10 @@ const orderSchema = new mongoose.Schema({
 
 
 // AUTO CALCULATIONS
-orderSchema.pre("save", function (next) {
-    this.finalPrice = this.totalPrice + this.shippingPrice;
+// orderSchema.pre("save", function (next) {
+//     this.finalPrice = this.totalPrice + this.shippingPrice;
 
-});
+// });
 
 
 // AUTO ORDER NUMBER
