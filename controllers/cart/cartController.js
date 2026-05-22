@@ -133,6 +133,7 @@ exports.addToCart = async (req, res) => {
 // };
 
 // update cart with offers support
+// update cart with offers support
 exports.updateCart = async (req, res) => {
   try {
     const { userId } = req.user;
@@ -140,12 +141,13 @@ exports.updateCart = async (req, res) => {
 
     let cart = await CartModel.findOne({ user: userId });
 
-
     if (!cart) {
       cart = new CartModel({ user: userId, items: [] });
     }
 
     const newItems = [];
+    // متغير خارجي لمعرفة ما إذا كانت السلة تحتوي على عروض أم لا
+    let hasOfferItems = false; 
 
     for (const item of items) {
       const qty = Number(item.quantity);
@@ -154,13 +156,12 @@ exports.updateCart = async (req, res) => {
       const product = await ProductModel.findById(item.product);
       if (!product) continue;
 
-
       const isOffer = item.isOffer === true || item.isOffer === 'true';
       let offerPrice = null;
 
       if (isOffer && item.offerPrice) {
-
         offerPrice = Number(item.offerPrice);
+        hasOfferItems = true; // نرفع العلامة إذا وجدنا منتج عرض واحد على الأقل
       }
 
       newItems.push({
@@ -168,28 +169,26 @@ exports.updateCart = async (req, res) => {
         unit_type: item.unit_type,
         quantity: qty,
         isOffer: isOffer,       
-        offerPrice: offerPrice   || null    
+        offerPrice: offerPrice || null    
       });
     }
 
-
     cart.items = newItems;
 
-  
     await cart.save();
 
-    if(isOffer){
-         return res.status(200).json({
-      message: "تم تحديث السلة بنجاح مع دعم العروض",
-      cart
-    });
+    // استخدام المتغير الصحيح المعرّف خارج الـ لوب
+    if (hasOfferItems) {
+      return res.status(200).json({
+        message: "تم تحديث السلة بنجاح مع دعم العروض",
+        cart
+      });
     }
 
-        return res.status(200).json({
-      message: "تم تحديث السلة بنجاح   ",
+    return res.status(200).json({
+      message: "تم تحديث السلة بنجاح",
       cart
     });
-
 
   } catch (err) {
     return res.status(500).json({
