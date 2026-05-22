@@ -546,7 +546,6 @@ exports.createOrderV2 = async (req, res) => {
     // CLEAN NUMBERS (IMPORTANT FIX)
     // =========================
     const shippingPrice = Number(req.body.shippingPrice || 0);
-    const discount = Number(req.body.discount || 0);
 
     // =========================
     // START TRANSACTION
@@ -698,6 +697,8 @@ exports.createOrderV2 = async (req, res) => {
     // =========================
     // FINAL PRICE (FIXED)
     // =========================
+    const discount = Number(req.body.discount || 0);
+      
    const finalPrice = Math.max(0, (shippingPrice + totalPrice) - discount);
 
     // =========================
