@@ -14,6 +14,8 @@ const offerController = require(`../controllers/order/offer`);
  */
 router.get("/", offerController.getOffers);
 
+router.get("/getProducts", offerController.getProducts);
+
 /**
  * GET SINGLE OFFER
  */
@@ -30,6 +32,8 @@ router.use(role("superadmin", "admin"));
  * CREATE OFFER
  */
 router.post("/", offerController.createOffer);
+
+
 
 /**
  * UPDATE OFFER
