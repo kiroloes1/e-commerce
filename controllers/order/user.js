@@ -539,7 +539,8 @@ exports.createOrderV2 = async (req, res) => {
             offerTitle = offer.title;
             
             // تحديث عدد المبيعات في المجلة فوراً داخل الـ Transaction
-            offer.soldCount += 1;
+            offer.soldCount += quantity || 1;
+            offer.customersUsed.push(userId);
             await offer.save({ session });
           }
         }
@@ -613,6 +614,8 @@ exports.createOrderV2 = async (req, res) => {
       payment: { ...payment, proofImage },
       finalPrice
     }], { session });
+
+
 
     await session.commitTransaction();
     session.endSession();
