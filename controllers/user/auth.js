@@ -322,7 +322,7 @@ exports.deleteUser = async (req, res) => {
   try {
     const { userId } = req.user;
 
-    const user = await UserModel.findByIdAndDelete(userId);
+    const user = await User.findByIdAndDelete(userId);
 
     
     if (!user) {
