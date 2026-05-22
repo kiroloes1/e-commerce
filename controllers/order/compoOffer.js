@@ -15,7 +15,7 @@ exports.createComboOffer = async (req, res) => {
       image
     } = req.body;
 
-    if (!title ||  items.length == 0) {
+    if (!title) {
       return res.status(400).json({
         message: "بيانات العرض غير مكتملة"
       });
