@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require(`${__dirname}/../../models/user`);
 const { Resend } = require('resend');
 const  { SendEmail } =require(`${__dirname}/../../services/nodemilar`);
-
+const cartModel =require(`${__dirname}/../../models/cart`)
 exports.facebookAuth = async (req, res) => {
   try {
     const { accessToken } = req.body;
