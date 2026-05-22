@@ -489,7 +489,6 @@ exports.createOrderV2 = async (req, res) => {
 
   try {
     const { userId } = req.user;
-
     const { customerName, phone } = req.body;
 
     const items =
@@ -542,10 +541,9 @@ exports.createOrderV2 = async (req, res) => {
     }
 
     // =========================
-    // CLEAN NUMBERS (IMPORTANT FIX)
+    // CLEAN NUMBERS
     // =========================
     const shippingPrice = Number(req.body.shippingPrice || 0);
-    // const discount = Number(req.body.discount || 0);
 
     // =========================
     // START TRANSACTION
@@ -554,39 +552,37 @@ exports.createOrderV2 = async (req, res) => {
     session.startTransaction();
 
     const cartExist = await Cart.findOne({ user: userId }).session(session);
-
     if (!cartExist) {
-      throw new Error("Cart not found for this user");
+      throw new Error("عربة التسوق غير موجودة لهذا المستخدم");
     }
 
     // =========================
     // PROCESS ITEMS
     // =========================
     for (const item of items) {
-      if (!item.product || !item.quantity || item.price == null) {
+      if (!item.product || !item.quantity) {
         throw new Error("بيانات المنتج غير مكتملة");
       }
 
       const quantity = Number(item.quantity);
-      let price = Number(item.price);
-
-      if (isNaN(quantity) || isNaN(price)) {
-        throw new Error("الأرقام غير صحيحة");
+      if (isNaN(quantity) || quantity <= 0) {
+        throw new Error("الكميات المطلوبة غير صحيحة");
       }
 
       const productRef = await Product.findById(item.product).session(session);
-
       if (!productRef) {
-        throw new Error(`Product not found: ${item.product}`);
+        throw new Error("أحد المنتجات غير موجود بالنظام");
       }
 
       // =========================
-      // OFFER LOGIC
+      // SECURE PRICE LOGIC (قراءة السعر من الـ DB فقط)
       // =========================
-      let isOfferItem = item.isOfferItem === true;
+      let isOfferItem = item.isOffer === true || item.isOffer === "true";
+      let price = 0;
       let offerTitle = "";
 
       if (isOfferItem) {
+        // البحث عن العرض النشط للمنتج في قاعدة البيانات
         const offer = await Offer.findOne({
           "products.product": item.product,
           active: true,
@@ -596,12 +592,26 @@ exports.createOrderV2 = async (req, res) => {
           const offerProduct = offer.products.find(
             (p) => p.product.toString() === item.product.toString()
           );
-
           if (offerProduct) {
             price = Number(offerProduct.offerPrice);
             offerTitle = offer.title;
           }
         }
+
+        // حماية: لو الفرونت قال إنه عرض بس مفيش عرض نشط في الـ DB، نرجع للسعر العادي للكرتونة
+        if (!price || isNaN(price)) {
+          isOfferItem = false; // إلغاء علامة العرض لعدم وجوده بالـ DB
+          price = Number(productRef.packageSellingPrice);
+        }
+      } else {
+        // منتج عادي: تحديد السعر بناءً على نوع الوحدة من قاعدة البيانات
+        price = item.unit_type === "قطعة" 
+          ? Number(productRef.pieceSellingPrice) 
+          : Number(productRef.packageSellingPrice);
+      }
+
+      if (isNaN(price) || price <= 0) {
+        throw new Error(`فشل في تحديد سعر صحيح للمنتج: ${productRef.productName}`);
       }
 
       // =========================
@@ -615,12 +625,14 @@ exports.createOrderV2 = async (req, res) => {
               $pull: {
                 items: {
                   product: new mongoose.Types.ObjectId(item.product),
+                  unit_type: item.unit_type,
+                  isOffer: item.isOffer
                 },
               },
             }
-          );
+          ).session(session);
 
-          throw new Error("الكمية المطلوبة أكبر من المخزون");
+          throw new Error(`المخزون لا يكفي للمنتج: ${productRef.productName}`);
         }
 
         productRef.totalUnits -= quantity;
@@ -640,12 +652,14 @@ exports.createOrderV2 = async (req, res) => {
               $pull: {
                 items: {
                   product: new mongoose.Types.ObjectId(item.product),
+                  unit_type: item.unit_type,
+                  isOffer: item.isOffer
                 },
               },
             }
-          );
+          ).session(session);
 
-          throw new Error("الكمية المطلوبة أكبر من المخزون");
+          throw new Error(`المخزون لا يكفي للمنتج: ${productRef.productName}`);
         }
 
         productRef.availableQuantity -= quantity;
@@ -656,7 +670,7 @@ exports.createOrderV2 = async (req, res) => {
       await productRef.save({ session });
 
       // =========================
-      // FINAL ITEM CALCULATION
+      // OVERWRITE ITEM WITH DB VALUES (تحديث البيانات المضمونة)
       // =========================
       item.quantity = quantity;
       item.price = price;
@@ -668,10 +682,7 @@ exports.createOrderV2 = async (req, res) => {
     // =========================
     // TOTAL PRICE
     // =========================
-    const totalPrice = items.reduce(
-      (acc, curr) => acc + curr.quantity * curr.price,
-      0
-    );
+    const totalPrice = items.reduce((acc, curr) => acc + curr.subtotal, 0);
 
     // =========================
     // CLEAR CART
@@ -686,7 +697,6 @@ exports.createOrderV2 = async (req, res) => {
     // WALLET UPLOAD
     // =========================
     let proofImage = null;
-
     if (payment.method === "wallet") {
       proofImage = await uploadToCloud.uploadToCloud(
         req.file,
@@ -695,13 +705,11 @@ exports.createOrderV2 = async (req, res) => {
     }
 
     // =========================
-    // FINAL PRICE (FIXED)
+    // FINAL PRICE CALCULATION
     // =========================
-const discount = Number(req.body.discount || 0);
-
-const subtotal = totalPrice + shippingPrice;
-
-const finalPrice = Math.max(0, subtotal - discount);
+    const discount = Number(req.body.discount || 0);
+    const subtotal = totalPrice + shippingPrice;
+    const finalPrice = Math.max(0, subtotal - discount);
 
     // =========================
     // CREATE ORDER
@@ -715,7 +723,7 @@ const finalPrice = Math.max(0, subtotal - discount);
           items,
           totalPrice,
           shippingPrice,
-          discount, // FIXED NAME
+          discount,
           address,
           payment: {
             method: payment.method || "cash",
@@ -728,32 +736,27 @@ const finalPrice = Math.max(0, subtotal - discount);
       { session }
     );
 
-      console.log({
- totalPrice,
- shippingPrice,
- discount,
- subtotal,
- finalPrice
-});
-
     await session.commitTransaction();
     session.endSession();
 
     // =========================
     // NOTIFICATIONS
     // =========================
-    const admins = await UserModel.find({
-      role: { $in: ["admin", "superadmin"] },
-    });
+    try {
+      const admins = await UserModel.find({
+        role: { $in: ["admin", "superadmin"] },
+      });
 
-    const order = createOrder[0];
-
-    for (const admin of admins) {
-      await createNotification(
-        admin._id.toString(),
-        "طلب جديد",
-        `طلب #${order.orderNumber} | ${order.customerName} | ${order.items.length} منتجات | ${order.finalPrice} ج.م`
-      );
+      const order = createOrder[0];
+      for (const admin of admins) {
+        await createNotification(
+          admin._id.toString(),
+          "طلب جديد",
+          `طلب #${order.orderNumber || order._id} | ${order.customerName} | ${order.items.length} منتجات | ${order.finalPrice} ج.م`
+        );
+      }
+    } catch (notifErr) {
+      console.error("Notification Error:", notifErr.message);
     }
 
     return res.status(201).json({
@@ -771,8 +774,6 @@ const finalPrice = Math.max(0, subtotal - discount);
     });
   }
 };
-
-
 
 // View my orders
 exports.viewMyOrders = async (req, res) => {
