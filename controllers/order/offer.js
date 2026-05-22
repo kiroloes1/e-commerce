@@ -241,17 +241,12 @@ exports.toggleOfferStatus = async (req, res) => {
     });
   }
 };
-
 exports.checkOfferUsage = async (req, res) => {
 
   try {
 
     const { userId } = req.user;
-
-    const {
-      offerId,
-      productId
-    } = req.params;
+    const { offerId, productId } = req.params;
 
     const offer =
       await Offer.findById(offerId);
@@ -268,6 +263,7 @@ exports.checkOfferUsage = async (req, res) => {
       offer.products.find(
 
         p =>
+
         p.product.toString() ===
         productId
 
@@ -276,12 +272,15 @@ exports.checkOfferUsage = async (req, res) => {
     if (!offerProduct){
 
       return res.status(404).json({
+
         message:
         "المنتج غير موجود داخل العرض"
+
       });
 
     }
 
+    // العميل نفسه
     const customerUsage =
       offer.customersUsed.find(
 
@@ -292,13 +291,27 @@ exports.checkOfferUsage = async (req, res) => {
 
       );
 
+    // المنتج داخل استخدام العميل
+    const productUsage =
+      customerUsage?.order?.find(
+
+        p =>
+
+        p.product.toString() ===
+        productId.toString()
+
+      );
+
     const usedCount =
-      customerUsage?.count || 0;
+      productUsage?.count || 0;
+
+    const maxPerUser =
+      offerProduct.maxPerUser;
 
     const remaining =
       Math.max(
         0,
-        offerProduct.maxPerUser -
+        maxPerUser -
         usedCount
       );
 
@@ -312,8 +325,11 @@ exports.checkOfferUsage = async (req, res) => {
 
       data:{
 
-        maxPerUser:
-        offerProduct.maxPerUser,
+        offerId,
+
+        productId,
+
+        maxPerUser,
 
         usedCount,
 
@@ -330,7 +346,9 @@ exports.checkOfferUsage = async (req, res) => {
   catch(err){
 
     return res.status(500).json({
+
       message:err.message
+
     });
 
   }
