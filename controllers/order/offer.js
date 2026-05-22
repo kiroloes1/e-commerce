@@ -7,8 +7,7 @@ exports.getProducts = async (req, res) => {
   try {
   
 
-        const product = await productModel.find({status:"active"},{_id:1,productName:1,description:1})
-    
+     const product = await productModel.find({status:"active"},{_id:1,productName:1,description:1})
     
 
 
@@ -23,7 +22,6 @@ exports.getProducts = async (req, res) => {
     });
   }
 };
-
 
 // get product by search
 exports.searchProducts = async (req, res) => {
@@ -47,8 +45,7 @@ exports.searchProducts = async (req, res) => {
       message: err.message
     });
   }
-
-  
+}
 // Create Offer
 exports.createOffer = async (req, res) => {
   try {
