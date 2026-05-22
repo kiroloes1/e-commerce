@@ -46,6 +46,7 @@ exports.addToCart = async (req, res) => {
         (item) =>
           item.product.toString() === newItem.product &&
           item.unit_type === newItem.unit_type
+          && item.isOffer ===newItem.isOffer
       );
 
       if (index > -1) {
