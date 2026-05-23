@@ -56,12 +56,12 @@ exports.searchProducts = async (req, res) => {
           }
         ]
       },
-      {
-        _id: 1,
-        productName: 1,
-        description: 1,
-        category: 1
-      }
+      // {
+      //   _id: 1,
+      //   productName: 1,
+      //   description: 1,
+      //   category: 1
+      // }
     );
 
     return res.status(200).json({
