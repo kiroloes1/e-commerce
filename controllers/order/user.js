@@ -5,7 +5,7 @@ const UserModel=require(`${__dirname}/../../models/user`)
 const { getIO } = require(`${__dirname}/../../sockets/socket`);
 const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
 const Offer = require(`${__dirname}/../../models/offer`);
-
+const ComboOffer =require(`${__dirname}/../../models/compoOffer`)
 // cloudinary
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`);
 const mongoose=require('mongoose');
@@ -509,6 +509,116 @@ exports.createOrderV2 = async (req, res) => {
 
     for (const item of items) {
       const quantity = Number(item.quantity);
+
+
+        // ==========================
+  // COMBO OFFER LOGIC
+  // ==========================
+  if (item.isCombo === true || item.isCombo === "true") {
+
+    const combo =
+      await ComboOffer.findById(item.comboId)
+      .populate("items.product")
+      .session(session);
+
+    if (!combo)
+      throw new Error("العرض المجمع غير موجود");
+
+    if (!combo.isAvailable)
+      throw new Error("العرض المجمع غير متاح حالياً");
+
+    // limit user
+    const customerUsed =
+      combo.customersUsed.find( c =>c.user?.toString() ===userId.toString());
+    const used =customerUsed?.count || 0;
+
+    if (used + quantity >combo.maxPerUser) {
+
+      throw new Error( `الحد الأقصى لهذا العرض ${combo.maxPerUser}`);
+
+     }
+
+    // total limit
+    if (
+      combo.soldCount + quantity > combo.totalLimit
+    ) {
+    throw new Error("العرض المجمع نفد");
+
+    }
+
+    let comboPrice = 0;
+
+    // خصم مخزون المنتجات
+    for (const subItem of combo.items) {
+
+      const product =subItem.product;
+
+      const needQty =subItem.quantity *quantity;
+
+      if (product.totalUnits <needQty) {
+
+        throw new Error(`المخزون غير كافي لـ ${product.productName}` );
+
+      }
+
+      product.totalUnits -= needQty;
+
+      if ( product.unit_type === "كرتونة"
+      ) {
+
+        product.availableQuantity =
+        Math.floor(product.totalUnits /product.unitsPerPackage
+        );
+
+      }
+      comboPrice += needQty * product.packageSellingPrice;
+
+      await product.save({ session});
+
+    }
+    // تطبيق الخصم
+    let finalComboPrice =comboPrice;
+    if (
+      combo.discountType ==="percentage" ) {
+      finalComboPrice -=
+      (
+        comboPrice *
+        combo.discountValue
+      ) / 100;
+
+    }
+
+    if (
+      combo.discountType ==="fixed"
+    ) {finalComboPrice -=combo.discountValue;
+    }
+
+    finalComboPrice = Math.max(0,finalComboPrice );
+
+    // usage
+    if (customerUsed) {
+      customerUsed.count +=quantity;
+    } else {
+
+      combo.customersUsed.push({
+  user:userId,
+  count:quantity
+      });
+
+    }
+
+    combo.soldCount += quantity;
+
+    await combo.save({session});
+
+    item.price =finalComboPrice
+    item.subtotal =finalComboPrice *quantity
+    item.comboTitle = combo.title;
+
+    continue;
+
+  }
+
       const productRef = await Product.findById(item.product).session(session);
       if (!productRef) throw new Error("أحد المنتجات غير موجود");
 
