@@ -2,21 +2,43 @@ const CartModel=require(`${__dirname}/../../models/cart`);
 const ProductModel = require(`${__dirname}/../../models/product`);
 // get cart by user must be login first
 exports.getCartByUser = async (req, res) => {
-    try {
-        const { userId } = req.user;
+  try {
 
-    const cart = await CartModel.findOne({ user: userId })
-  .populate("items.product", "-purchasePrice") || [];
+    const { userId } = req.user;
 
+    const cart = await CartModel
+      .findOne({ user: userId })
 
+      .populate(
+        "items.product",
+        "-purchasePrice"
+      )
 
-        return res.status(200).json(cart);
+      .populate(
+        "items.comboId"
+      )
 
-    } catch (err) {
-        return res.status(500).json({ message: "Server error", error: err.message });
-    }
+      .populate(
+        "items.comboProducts.product",
+        "-purchasePrice"
+      );
+
+    return res.status(200).json(
+      cart || { items: [] }
+    );
+
+  } catch (err) {
+
+    return res.status(500).json({
+
+      message:"Server error",
+
+      error:err.message
+
+    });
+
+  }
 };
-
 // create 
 exports.addToCart = async (req, res) => {
   try {
