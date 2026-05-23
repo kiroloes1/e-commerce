@@ -169,7 +169,7 @@ exports.updateCart = async (req, res) => {
           product: null,
           unit_type: null,
           isOffer: false,
-          maxPerUser: null
+          maxPerUser: item.maxPerUser ? Number(item.maxPerUser) : 1
         });
         
         hasOfferItems = true;
