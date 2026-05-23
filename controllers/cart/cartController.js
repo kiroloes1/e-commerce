@@ -30,7 +30,7 @@ exports.getCartByUser = async (req, res) => {
         path: "items.comboProducts.product",
 
         select:
-        "productName description image"
+        "productName description image unit_type"
       });
 
     return res
