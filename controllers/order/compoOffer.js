@@ -12,7 +12,7 @@ exports.createComboOffer = async (req, res) => {
       totalLimit,
       discountType,
       discountValue,
-      maxPerUser
+      maxPerUser,
       image
     } = req.body;
 
@@ -31,7 +31,7 @@ exports.createComboOffer = async (req, res) => {
       totalLimit,
       discountType,
       discountValue,
-      image
+      image,
       maxPerUser
     });
 
