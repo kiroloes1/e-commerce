@@ -4,7 +4,7 @@ const orderItemSchema = new mongoose.Schema({
     product: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: "Product", 
-     
+        required: true 
     },
     comboId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -43,6 +43,14 @@ const orderItemSchema = new mongoose.Schema({
         type:String,
         default:""
     },
+    isComboItem:{
+        type:Boolean,
+        default:false
+    },
+    comboTitle:{        
+        type:String,
+        default:""
+    }
     
 
 }, { _id: false }); // to reduce size
