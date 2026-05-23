@@ -20,68 +20,346 @@ exports.getCartByUser = async (req, res) => {
 // create 
 exports.addToCart = async (req, res) => {
   try {
+
     const { userId } = req.user;
     const { items } = req.body;
 
-    let cart = await CartModel.findOne({ user: userId });
+    let cart = await CartModel.findOne({
+      user: userId
+    });
 
     if (!cart) {
-      cart = new CartModel({ user: userId, items: [] });
+
+      cart = new CartModel({
+        user: userId,
+        items: []
+      });
+
     }
 
     for (const newItem of items) {
+
       const qty = Number(newItem.quantity);
-      if (!qty || isNaN(qty)) continue;
 
-  
-      const product = await ProductModel.findById(newItem.product);
-      if (!product) continue;
+      if (!qty || isNaN(qty) || qty <= 0)
+        continue;
 
-      const maxStock =
-        newItem.unit_type === "قطعة"
-          ? product.totalUnits
-          : product.availableQuantity;
+      /*
+      ==================
+      COMBO OFFER
+      ==================
+      */
 
-      const index = cart.items.findIndex(
-        (item) =>
-          item.product.toString() === newItem.product &&
-          item.unit_type === newItem.unit_type
-          && item.isOffer ===newItem.isOffer
-      );
+      if (
+        newItem.isCombo === true ||
+        newItem.isCombo === "true"
+      ) {
 
-      if (index > -1) {
-        const currentQty = Number(cart.items[index].quantity) || 0;
+        const comboIndex =
+          cart.items.findIndex(
 
-        let newQty = currentQty + qty;
+            item =>
 
-        //  CLAMP
-        if (newQty > maxStock) {
-          newQty = maxStock;
+              item.isCombo === true &&
+
+              item.comboId?.toString() ===
+              newItem.comboId
+
+          );
+
+        if (comboIndex > -1) {
+
+          cart.items[
+            comboIndex
+          ].quantity += qty;
+
         }
 
-        cart.items[index].quantity = newQty;
-      } else {
-        cart.items.push({
-          product: newItem.product,
-          unit_type: newItem.unit_type,
-          quantity: qty > maxStock ? maxStock : qty
-        });
+        else {
+
+          cart.items.push({
+
+            isCombo: true,
+
+            comboId:
+              newItem.comboId,
+
+            title:
+              newItem.title ||
+
+              "عرض مجمع",
+
+            quantity: qty,
+
+            offerPrice:
+              newItem.offerPrice ||
+
+              null,
+
+            comboProducts:
+
+              Array.isArray(
+                newItem.items
+              )
+
+                ?
+
+                newItem.items.map(
+                  sub => ({
+
+                    product:
+                      sub.product,
+
+                    productName:
+                      sub.productName,
+
+                    quantity:
+                      sub.quantity
+
+                  })
+                )
+
+                :
+
+                [],
+
+            product: null,
+
+            unit_type: null,
+
+            isOffer: false,
+
+            maxPerUser: null
+
+          });
+
+        }
+
+        continue;
+
       }
+
+      /*
+      ==================
+      PRODUCT / OFFER
+      ==================
+      */
+
+      const product =
+        await ProductModel
+          .findById(
+            newItem.product
+          );
+
+      if (!product)
+        continue;
+
+      const maxStock =
+
+        newItem.unit_type ===
+          "قطعة"
+
+          ?
+
+          product.totalUnits
+
+          :
+
+          product.availableQuantity;
+
+      const index =
+        cart.items.findIndex(
+
+          item =>
+
+            !item.isCombo &&
+
+            item.product &&
+
+            item.product
+              .toString()
+
+            ===
+
+            newItem.product
+
+            &&
+
+            item.unit_type ===
+            newItem.unit_type
+
+            &&
+
+            item.isOffer ===
+
+            (
+              newItem.isOffer === true ||
+
+              newItem.isOffer ===
+              "true"
+            )
+
+        );
+
+      const isOffer =
+
+        newItem.isOffer === true ||
+
+        newItem.isOffer ===
+        "true";
+
+      if (index > -1) {
+
+        const currentQty =
+
+          Number(
+
+            cart.items[
+              index
+            ].quantity
+
+          ) || 0;
+
+        let finalQty =
+          currentQty + qty;
+
+        if (
+          finalQty >
+          maxStock
+        ) {
+
+          finalQty =
+            maxStock;
+
+        }
+
+        cart.items[
+          index
+        ].quantity = finalQty;
+
+      }
+
+      else {
+
+        cart.items.push({
+
+          product:
+            newItem.product,
+
+          quantity:
+
+            qty > maxStock
+
+              ?
+
+              maxStock
+
+              :
+
+              qty,
+
+          unit_type:
+            newItem.unit_type,
+
+          isOffer,
+
+          offerPrice:
+
+            isOffer
+
+              ?
+
+              Number(
+                newItem.offerPrice
+              )
+
+              :
+
+              null,
+
+          maxPerUser:
+
+            newItem.maxPerUser
+
+              ?
+
+              Number(
+                newItem.maxPerUser
+              )
+
+              :
+
+              null,
+
+          isCombo: false,
+
+          comboId: null,
+
+          title: null,
+
+          comboProducts: []
+
+        });
+
+      }
+
     }
 
     await cart.save();
 
+    await cart.populate([
+
+      {
+
+        path:
+          "items.product",
+
+        select:
+          "-purchasePrice"
+
+      },
+
+      {
+
+        path:
+          "items.comboId"
+
+      },
+
+      {
+
+        path:
+          "items.comboProducts.product"
+
+      }
+
+    ]);
+
     return res.status(200).json({
-      message: "Cart updated with stock validation",
+
+      message:
+        "Cart updated successfully",
+
       cart
+
     });
 
-  } catch (err) {
-    return res.status(500).json({
-      message: "Server error",
-      error: err.message
-    });
   }
+
+  catch (err) {
+
+    return res.status(500).json({
+
+      message:
+        "Server error",
+
+      error:
+        err.message
+
+    });
+
+  }
+
 };
 
 // update
