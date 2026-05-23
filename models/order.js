@@ -6,6 +6,11 @@ const orderItemSchema = new mongoose.Schema({
         ref: "Product", 
         required: true 
     },
+    comboId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ComboOffer", 
+        required: false
+    },
 
     productName: { 
         type: String, 
