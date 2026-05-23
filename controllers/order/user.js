@@ -513,35 +513,52 @@ exports.createOrderV2 = async (req, res) => {
       const quantity = Number(item.quantity);
 
 
+  // ==========================================
+      // 1. معالجة العرض المجمع (COMBO OFFER)
+      // ==========================================
       if (item.isCombo === true || item.isCombo === "true") {
-        const combo = await ComboOffer.findById(item.comboId)
-          .populate("items.product")
-          .session(session);
+        const combo = await ComboOffer.findById(item.comboId).session(session);
 
         if (!combo) throw new Error("العرض المجمع غير موجود");
         if (!combo.isAvailable) throw new Error("العرض المجمع غير متاح حالياً أو انتهت مدته");
 
-     
+        // التحقق من الحد الأقصى لكل مستخدم وللعرض الإجمالي
         const customerUsed = combo.customersUsed.find(c => c.user?.toString() === userId.toString());
         const used = customerUsed?.count || 0;
         if (used + quantity > combo.maxPerUser) {
           throw new Error(`الحد الأقصى المسموح به لك من عرض "${combo.title}" هو ${combo.maxPerUser} مرات فقط`);
         }
-
-        
         if (combo.soldCount + quantity > combo.totalLimit) {
           throw new Error(`عذراً، نفدت الكمية المتاحة من العرض المجمع: ${combo.title}`);
         }
 
         let singleComboOriginalPrice = 0;
+        const freshComboProducts = [];
+
+        // جلب المنتجات وحساب السعر بناءً على الـ unit_type المحددة في الكومبو
         for (const subItem of combo.items) {
-          if (!subItem.product) throw new Error("أحد المنتجات المكونة للكومبو لم يعد متاحاً بالسيستم");
-          singleComboOriginalPrice += subItem.quantity * subItem.product.packageSellingPrice;
+          const prod = await Product.findById(subItem.product).session(session);
+          if (!prod) throw new Error("أحد المنتجات المكونة للكومبو لم يعد متاحاً بالسيستم");
+          
+          // تحديد نوع الوحدة من تفاصيل الكومبو (كرتونة أو قطعة)
+          const currentUnitType = subItem.unit_type || prod.unit_type; 
+          
+          // تحديد سعر الوحدة بناءً على النوع المختار في الكومبو
+          const basePrice = currentUnitType === "قطعة" ? prod.pieceSellingPrice : prod.packageSellingPrice;
+          
+          singleComboOriginalPrice += subItem.quantity * basePrice;
+          
+          freshComboProducts.push({ 
+            prod, 
+            requiredQtyPerCombo: subItem.quantity,
+            unitType: currentUnitType,
+            basePrice
+          });
         }
 
         if (singleComboOriginalPrice === 0) throw new Error("فشل في حساب السعر الأصلي لمكونات الكومبو");
 
-
+        // حساب عامل الخصم (Multiplier)
         let discountMultiplier = 1; 
         if (combo.discountType === "percentage") {
           discountMultiplier = (100 - combo.discountValue) / 100;
@@ -550,35 +567,39 @@ exports.createOrderV2 = async (req, res) => {
           discountMultiplier = finalComboPrice / singleComboOriginalPrice;
         }
 
+        // تحديث مخزون المنتجات وحفظها بناءً على الـ unit_type المحددة
+        for (const { prod, requiredQtyPerCombo, unitType, basePrice } of freshComboProducts) {
+          const totalNeedQty = requiredQtyPerCombo * quantity;
 
-        for (const subItem of combo.items) {
-          const productRef = subItem.product;
-          
-
-          const totalNeedQty = subItem.quantity * quantity;
-
-          if (productRef.totalUnits < totalNeedQty) {
-            throw new Error(`المخزون غير كافي من [${productRef.productName}] لتلبية العرض المجمع`);
-          }
-
-          productRef.totalUnits -= totalNeedQty;
-          if (productRef.unit_type === "كرتونة") {
-            productRef.availableQuantity = Math.floor(productRef.totalUnits / productRef.unitsPerPackage);
+          // سحب المخزون بذكاء حسب نوع الوحدة (قطعة أو كرتونة)
+          if (unitType === "قطعة") {
+            if (prod.totalUnits < totalNeedQty) {
+              throw new Error(`المخزون غير كافي من [${prod.productName}] لتلبية العرض المجمع`);
+            }
+            prod.totalUnits -= totalNeedQty;
+            prod.availableQuantity = prod.unit_type === "كرتونة" 
+              ? Math.floor(prod.totalUnits / prod.unitsPerPackage) 
+              : prod.totalUnits;
           } else {
-            productRef.availableQuantity = productRef.totalUnits;
+            // كرتونة
+            if (prod.availableQuantity < totalNeedQty) {
+              throw new Error(`المخزون غير كافي من [${prod.productName}] لتلبية العرض المجمع`);
+            }
+            prod.availableQuantity -= totalNeedQty;
+            prod.totalUnits -= totalNeedQty * prod.unitsPerPackage;
           }
-          await productRef.save({ session });
+          
+          await prod.save({ session });
 
-
-          let subItemPriceAfterDiscount = productRef.packageSellingPrice * discountMultiplier;
+          // حساب السعر النهائي للقطعة/الكرتونة داخل الكومبو بعد الخصم
+          let subItemPriceAfterDiscount = basePrice * discountMultiplier;
           subItemPriceAfterDiscount = Math.max(0, Number(subItemPriceAfterDiscount.toFixed(2)));
 
-
           finalOrderItems.push({
-            product: productRef._id,
+            product: prod._id,
             comboId: combo._id,
-            productName: productRef.productName,
-            unit_type: productRef.unit_type, 
+            productName: prod.productName,
+            unit_type: unitType, // تم التثبيت هنا بناءً على العرض
             quantity: totalNeedQty,
             price: subItemPriceAfterDiscount,
             subtotal: Number((subItemPriceAfterDiscount * totalNeedQty).toFixed(2)),
@@ -589,7 +610,7 @@ exports.createOrderV2 = async (req, res) => {
           });
         }
 
-
+        // تحديث عدادات الكومبو
         if (customerUsed) {
           customerUsed.count += quantity;
         } else {
@@ -598,6 +619,7 @@ exports.createOrderV2 = async (req, res) => {
         combo.soldCount += quantity;
         await combo.save({ session });
 
+        processedCartItemIds.push({ comboId: combo._id.toString(), isCombo: true });
         continue; 
       }
 
