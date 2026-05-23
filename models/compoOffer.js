@@ -36,6 +36,11 @@ const ComboOfferSchema = new mongoose.Schema(
             quantity:{
                 type:Number,
                 default:1
+            },
+            unit_type:{
+                type:String,
+                enum:["قطعة","كرتونة"],
+                default:"قطعة"
             }
 
         }
