@@ -12,6 +12,7 @@ exports.createComboOffer = async (req, res) => {
       totalLimit,
       discountType,
       discountValue,
+      maxPerUser
       image
     } = req.body;
 
@@ -31,6 +32,7 @@ exports.createComboOffer = async (req, res) => {
       discountType,
       discountValue,
       image
+      maxPerUser
     });
 
     return res.status(201).json({
@@ -43,6 +45,8 @@ exports.createComboOffer = async (req, res) => {
     });
   }
 };
+
+
 
 exports.getComboOffers = async (req, res) => {
   try {
@@ -60,6 +64,8 @@ exports.getComboOffers = async (req, res) => {
     });
   }
 };
+
+
 
 exports.getComboOfferById = async (req, res) => {
   try {
@@ -104,6 +110,8 @@ exports.updateComboOffer = async (req, res) => {
     combo.totalLimit = req.body.totalLimit || combo.totalLimit;
     combo.discountType = req.body.discountType || combo.discountType;
     combo.discountValue = req.body.discountValue || combo.discountValue;
+    combo.maxPerUser = req.body.maxPerUser || combo.maxPerUser;
+
 
     if (req.body.image) {
       combo.image = req.body.image;
