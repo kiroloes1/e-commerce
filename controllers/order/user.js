@@ -619,7 +619,7 @@ exports.createOrderV2 = async (req, res) => {
         combo.soldCount += quantity;
         await combo.save({ session });
 
-        processedCartItemIds.push({ comboId: combo._id.toString(), isCombo: true });
+        // processedCartItemIds.push({ comboId: combo._id.toString(), isCombo: true });
         continue; 
       }
 
