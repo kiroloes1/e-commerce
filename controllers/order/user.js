@@ -484,7 +484,6 @@ exports.createOrder=async(req,res)=>{
 // };
 
 // Create order (Fixed & Clean Version)
-// Create order (Fixed Offer Price Logic)
 exports.createOrderV2 = async (req, res) => {
   let session;
 
@@ -492,11 +491,11 @@ exports.createOrderV2 = async (req, res) => {
     const { userId } = req.user;
     const { customerName, phone } = req.body;
 
-    const items = typeof req.body.items === "string" ? JSON.parse(req.body.items) : req.body.items || [];
+    const inputItems = typeof req.body.items === "string" ? JSON.parse(req.body.items) : req.body.items || [];
     const address = typeof req.body.address === "string" ? JSON.parse(req.body.address) : req.body.address || {};
     const payment = typeof req.body.payment === "string" ? JSON.parse(req.body.payment) : req.body.payment || {};
 
-    if (items.length === 0) return res.status(400).json({ message: "يجب إضافة منتج واحد على الأقل" });
+    if (inputItems.length === 0) return res.status(400).json({ message: "يجب إضافة منتج واحد على الأقل" });
 
     const shippingPrice = Number(req.body.shippingPrice || 0);
     const now = new Date(); 
@@ -507,99 +506,104 @@ exports.createOrderV2 = async (req, res) => {
     const cartExist = await Cart.findOne({ user: userId }).session(session);
     if (!cartExist) throw new Error("عربة التسوق غير موجودة");
 
-    for (const item of items) {
+
+    const finalOrderItems = [];
+
+    for (const item of inputItems) {
       const quantity = Number(item.quantity);
 
-      // ==========================================
-      // 📦 منطق العروض المجمعة (COMBO OFFER LOGIC)
-      // ==========================================
+
       if (item.isCombo === true || item.isCombo === "true") {
         const combo = await ComboOffer.findById(item.comboId)
           .populate("items.product")
           .session(session);
 
         if (!combo) throw new Error("العرض المجمع غير موجود");
-        if (!combo.isAvailable) throw new Error("العرض المجمع غير متاح حالياً");
+        if (!combo.isAvailable) throw new Error("العرض المجمع غير متاح حالياً أو انتهت مدته");
 
-        // التحقق من الحد الأقصى للمستخدم
+     
         const customerUsed = combo.customersUsed.find(c => c.user?.toString() === userId.toString());
         const used = customerUsed?.count || 0;
-
         if (used + quantity > combo.maxPerUser) {
-          throw new Error(`الحد الأقصى المسموح به لك من هذا العرض هو ${combo.maxPerUser} قطع فقط`);
+          throw new Error(`الحد الأقصى المسموح به لك من عرض "${combo.title}" هو ${combo.maxPerUser} مرات فقط`);
         }
 
-        // التحقق من الحد الإجمالي للعرض
+        
         if (combo.soldCount + quantity > combo.totalLimit) {
-          throw new Error("عذراً، نفدت الكمية المتاحة من هذا العرض المجمع");
+          throw new Error(`عذراً، نفدت الكمية المتاحة من العرض المجمع: ${combo.title}`);
         }
 
         let singleComboOriginalPrice = 0;
-
-        // خصم مخزون المنتجات الداخلية للكومبو
         for (const subItem of combo.items) {
-          const product = subItem.product;
-          if (!product) throw new Error("أحد المنتجات الداخلية في الكومبو لم يعد متاحاً");
-
-          const needQty = subItem.quantity * quantity;
-
-          if (product.totalUnits < needQty) {
-            throw new Error(`المخزون غير كافي من ${product.productName} لتلبية العرض`);
-          }
-
-          product.totalUnits -= needQty;
-
-          if (product.unit_type === "كرتونة") {
-            product.availableQuantity = Math.floor(product.totalUnits / product.unitsPerPackage);
-          } else {
-            product.availableQuantity = product.totalUnits;
-          }
-
-          // حساب سعر الكومبو "الواحد" الأصلي بناءً على مكوناته الفرعية
-          singleComboOriginalPrice += subItem.quantity * product.packageSellingPrice;
-
-          await product.save({ session });
+          if (!subItem.product) throw new Error("أحد المنتجات المكونة للكومبو لم يعد متاحاً بالسيستم");
+          singleComboOriginalPrice += subItem.quantity * subItem.product.packageSellingPrice;
         }
 
-        // تطبيق الخصم على العرض الواحد
-        let finalSingleComboPrice = singleComboOriginalPrice;
+        if (singleComboOriginalPrice === 0) throw new Error("فشل في حساب السعر الأصلي لمكونات الكومبو");
+
+
+        let discountMultiplier = 1; 
         if (combo.discountType === "percentage") {
-          finalSingleComboPrice -= (singleComboOriginalPrice * combo.discountValue) / 100;
+          discountMultiplier = (100 - combo.discountValue) / 100;
         } else if (combo.discountType === "fixed") {
-          finalSingleComboPrice -= combo.discountValue;
+          const finalComboPrice = Math.max(0, singleComboOriginalPrice - combo.discountValue);
+          discountMultiplier = finalComboPrice / singleComboOriginalPrice;
         }
 
-        finalSingleComboPrice = Math.max(0, finalSingleComboPrice);
 
-        // تحديث سجل استخدام المستخدم للكومبو
+        for (const subItem of combo.items) {
+          const productRef = subItem.product;
+          
+
+          const totalNeedQty = subItem.quantity * quantity;
+
+          if (productRef.totalUnits < totalNeedQty) {
+            throw new Error(`المخزون غير كافي من [${productRef.productName}] لتلبية العرض المجمع`);
+          }
+
+          productRef.totalUnits -= totalNeedQty;
+          if (productRef.unit_type === "كرتونة") {
+            productRef.availableQuantity = Math.floor(productRef.totalUnits / productRef.unitsPerPackage);
+          } else {
+            productRef.availableQuantity = productRef.totalUnits;
+          }
+          await productRef.save({ session });
+
+
+          let subItemPriceAfterDiscount = productRef.packageSellingPrice * discountMultiplier;
+          subItemPriceAfterDiscount = Math.max(0, Number(subItemPriceAfterDiscount.toFixed(2)));
+
+
+          finalOrderItems.push({
+            product: productRef._id,
+            comboId: combo._id,
+            productName: productRef.productName,
+            unit_type: productRef.unit_type, 
+            quantity: totalNeedQty,
+            price: subItemPriceAfterDiscount,
+            subtotal: Number((subItemPriceAfterDiscount * totalNeedQty).toFixed(2)),
+            isOfferItem: false,
+            offerTitle: "",
+            isComboItem: true,
+            comboTitle: combo.title
+          });
+        }
+
+
         if (customerUsed) {
           customerUsed.count += quantity;
         } else {
           combo.customersUsed.push({ user: userId, count: quantity });
         }
-
         combo.soldCount += quantity;
         await combo.save({ session });
 
-        // تثبيت حقول الداتا لتطابق الـ Order Schema تماماً وتجنب الـ Validation Error
-        item.product = null; // الكومبو لا يملك منتجاً وحيداً
-        item.comboId = combo._id;
-        item.productName = combo.title || item.title || "عرض كومبو مجمع";
-        item.unit_type = "عرض";
-        item.price = finalSingleComboPrice; 
-        item.subtotal = finalSingleComboPrice * quantity;
-        item.isCombo = true;
-        item.isOfferItem = false;
-        item.offerTitle = combo.title;
-
-        continue; // تخطي منطق المنتجات العادية والانتقال للعنصر التالي بالسلة
+        continue; 
       }
 
-      // ==========================================
-      // 🍎 منطق المنتجات العادية والعروض الفرعية
-      // ==========================================
+
       const productRef = await Product.findById(item.product).session(session);
-      if (!productRef) throw new Error("أحد المنتجات المطلوبة غير موجود");
+      if (!productRef) throw new Error("أحد المنتجات المطلوبة غير موجود بالسيرفر");
 
       let price = 0;
       let isOfferItem = item.isOffer === true || item.isOffer === "true";
@@ -621,17 +625,11 @@ exports.createOrderV2 = async (req, res) => {
           if (offerProduct) {
             price = Number(offerProduct.offerPrice);
             offerTitle = offer.title;
-            
             offer.soldCount += quantity || 1;
 
-            const existCustomerUsed = offer.customersUsed.find(
-              e => e.id.toString() === userId.toString()
-            );
-
+            const existCustomerUsed = offer.customersUsed.find(e => e.id.toString() === userId.toString());
             if (existCustomerUsed) {
-              const existProduct = existCustomerUsed.order.find(
-                o => o.product.toString() === productRef._id.toString()
-              );
+              const existProduct = existCustomerUsed.order.find(o => o.product.toString() === productRef._id.toString());
               if (existProduct) {
                 existProduct.count += quantity;
               } else {
@@ -643,7 +641,6 @@ exports.createOrderV2 = async (req, res) => {
                 order: [{ product: productRef._id, count: quantity }]
               });
             }
-
             await offer.save({ session });
           }
         }
@@ -656,7 +653,7 @@ exports.createOrderV2 = async (req, res) => {
         price = item.unit_type === "قطعة" ? productRef.pieceSellingPrice : productRef.packageSellingPrice;
       }
 
-      // حساب مخزون المنتجات العادية
+  
       let outOfStock = false;
       if (item.unit_type === "قطعة") {
         if (productRef.totalUnits < quantity) outOfStock = true;
@@ -675,26 +672,31 @@ exports.createOrderV2 = async (req, res) => {
       }
 
       if (outOfStock) {
-        // حماية المخزن وتحديث السلة المحلية عند الفشل المباشر
         cartExist.items = cartExist.items.filter(c => !(c.product?.toString() === item.product?.toString() && c.unit_type === item.unit_type));
         await cartExist.save({ session });
-        throw new Error(`المخزون غير كافٍ للمنتج: ${productRef.productName}`);
+        throw new Error(`المخزون نفد وغير كافٍ للمنتج العادي: ${productRef.productName}`);
       }
 
       await productRef.save({ session });
 
-      // تثبيت البيانات للمنتج العادي
-      item.comboId = null;
-      item.productName = productRef.productName;
-      item.price = price;
-      item.subtotal = quantity * price;
-      item.isOfferItem = isOfferItem;
-      item.isCombo = false;
-      item.offerTitle = offerTitle;
+   
+      finalOrderItems.push({
+        product: productRef._id,
+        comboId: null,
+        productName: productRef.productName,
+        unit_type: item.unit_type,
+        quantity: quantity,
+        price: price,
+        subtotal: Number((quantity * price).toFixed(2)),
+        isOfferItem: isOfferItem,
+        offerTitle: offerTitle,
+        isComboItem: false,
+        comboTitle: ""
+      });
     }
 
-    // حساب الإجماليات بعد معالجة كافة العناصر وتجهيز الأسعار بدقة
-    const totalPrice = items.reduce((acc, curr) => acc + curr.subtotal, 0);
+
+    const totalPrice = finalOrderItems.reduce((acc, curr) => acc + curr.subtotal, 0);
 
     let proofImage = null;
     if (payment.method === "wallet") {
@@ -704,36 +706,36 @@ exports.createOrderV2 = async (req, res) => {
     const discount = Number(req.body.discount || 0);
     const finalPrice = Math.max(0, (totalPrice + shippingPrice) - discount);
 
-    // إنشاء الطلب الفعلي داخل الـ Transaction الحالية
+
     const [order] = await Order.create([{
       user: userId,
       customerName,
       phone,
-      items, // أصبحت مصفوفة نظيفة ومتوافقة بالكامل مع الـ Schema
-      totalPrice,
+      items: finalOrderItems, 
+      totalPrice: Number(totalPrice.toFixed(2)),
       shippingPrice,
       discount,
       address,
       payment: { ...payment, proofImage },
-      finalPrice
+      finalPrice: Number(finalPrice.toFixed(2))
     }], { session });
 
-    // 💡 الأمان: تفريغ السلة "فقط وحصرياً" بعد نجاح إنشاء الـ Order كاملاً وبدون أخطاء
+
     cartExist.items = [];
     await cartExist.save({ session });
 
     await session.commitTransaction();
     session.endSession();
 
-    return res.status(201).json({ message: "تم إنشاء الطلب بنجاح", order });
+    return res.status(201).json({ message: "تم تسجيل وتجهيز طلبك بنجاح", order });
 
   } catch (err) {
     if (session) { 
       await session.abortTransaction(); 
       session.endSession(); 
     }
-    console.error("Order Creation Error V2: ", err);
-    return res.status(500).json({ message: err.message || "عذراً، حدث خطأ أثناء تنفيذ الطلب" });
+    console.error("Critical Failure in createOrderV2: ", err);
+    return res.status(500).json({ message: err.message || "حدث خطأ غير متوقع أثناء معالجة الطلب" });
   }
 };
 
