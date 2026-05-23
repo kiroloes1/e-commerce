@@ -499,7 +499,7 @@ exports.createOrderV2 = async (req, res) => {
     if (items.length === 0) return res.status(400).json({ message: "يجب إضافة منتج واحد على الأقل" });
 
     const shippingPrice = Number(req.body.shippingPrice || 0);
-    const now = new Date(); // الوقت الحالي للتحقق من العروض
+    const now = new Date(); 
 
     session = await mongoose.startSession();
     session.startTransaction();
@@ -510,127 +510,102 @@ exports.createOrderV2 = async (req, res) => {
     for (const item of items) {
       const quantity = Number(item.quantity);
 
+      // ==========================================
+      // 📦 منطق العروض المجمعة (COMBO OFFER LOGIC)
+      // ==========================================
+      if (item.isCombo === true || item.isCombo === "true") {
+        const combo = await ComboOffer.findById(item.comboId)
+          .populate("items.product")
+          .session(session);
 
-        // ==========================
-  // COMBO OFFER LOGIC
-  // ==========================
-  if (item.isCombo === true || item.isCombo === "true") {
+        if (!combo) throw new Error("العرض المجمع غير موجود");
+        if (!combo.isAvailable) throw new Error("العرض المجمع غير متاح حالياً");
 
-    const combo =
-      await ComboOffer.findById(item.comboId)
-      .populate("items.product")
-      .session(session);
+        // التحقق من الحد الأقصى للمستخدم
+        const customerUsed = combo.customersUsed.find(c => c.user?.toString() === userId.toString());
+        const used = customerUsed?.count || 0;
 
-    if (!combo)
-      throw new Error("العرض المجمع غير موجود");
+        if (used + quantity > combo.maxPerUser) {
+          throw new Error(`الحد الأقصى المسموح به لك من هذا العرض هو ${combo.maxPerUser} قطع فقط`);
+        }
 
-    if (!combo.isAvailable)
-      throw new Error("العرض المجمع غير متاح حالياً");
+        // التحقق من الحد الإجمالي للعرض
+        if (combo.soldCount + quantity > combo.totalLimit) {
+          throw new Error("عذراً، نفدت الكمية المتاحة من هذا العرض المجمع");
+        }
 
-    // limit user
-    const customerUsed =
-      combo.customersUsed.find( c =>c.user?.toString() ===userId.toString());
-    const used =customerUsed?.count || 0;
+        let singleComboOriginalPrice = 0;
 
-    if (used + quantity >combo.maxPerUser) {
+        // خصم مخزون المنتجات الداخلية للكومبو
+        for (const subItem of combo.items) {
+          const product = subItem.product;
+          if (!product) throw new Error("أحد المنتجات الداخلية في الكومبو لم يعد متاحاً");
 
-      throw new Error( `الحد الأقصى لهذا العرض ${combo.maxPerUser}`);
+          const needQty = subItem.quantity * quantity;
 
-     }
+          if (product.totalUnits < needQty) {
+            throw new Error(`المخزون غير كافي من ${product.productName} لتلبية العرض`);
+          }
 
-    // total limit
-    if (
-      combo.soldCount + quantity > combo.totalLimit
-    ) {
-    throw new Error("العرض المجمع نفد");
+          product.totalUnits -= needQty;
 
-    }
+          if (product.unit_type === "كرتونة") {
+            product.availableQuantity = Math.floor(product.totalUnits / product.unitsPerPackage);
+          } else {
+            product.availableQuantity = product.totalUnits;
+          }
 
-    let comboPrice = 0;
+          // حساب سعر الكومبو "الواحد" الأصلي بناءً على مكوناته الفرعية
+          singleComboOriginalPrice += subItem.quantity * product.packageSellingPrice;
 
-    // خصم مخزون المنتجات
-    for (const subItem of combo.items) {
+          await product.save({ session });
+        }
 
-      const product =subItem.product;
+        // تطبيق الخصم على العرض الواحد
+        let finalSingleComboPrice = singleComboOriginalPrice;
+        if (combo.discountType === "percentage") {
+          finalSingleComboPrice -= (singleComboOriginalPrice * combo.discountValue) / 100;
+        } else if (combo.discountType === "fixed") {
+          finalSingleComboPrice -= combo.discountValue;
+        }
 
-      const needQty =subItem.quantity *quantity;
+        finalSingleComboPrice = Math.max(0, finalSingleComboPrice);
 
-      if (product.totalUnits <needQty) {
+        // تحديث سجل استخدام المستخدم للكومبو
+        if (customerUsed) {
+          customerUsed.count += quantity;
+        } else {
+          combo.customersUsed.push({ user: userId, count: quantity });
+        }
 
-        throw new Error(`المخزون غير كافي لـ ${product.productName}` );
+        combo.soldCount += quantity;
+        await combo.save({ session });
 
+        // تثبيت حقول الداتا لتطابق الـ Order Schema تماماً وتجنب الـ Validation Error
+        item.product = null; // الكومبو لا يملك منتجاً وحيداً
+        item.comboId = combo._id;
+        item.productName = combo.title || item.title || "عرض كومبو مجمع";
+        item.unit_type = "عرض";
+        item.price = finalSingleComboPrice; 
+        item.subtotal = finalSingleComboPrice * quantity;
+        item.isCombo = true;
+        item.isOfferItem = false;
+        item.offerTitle = combo.title;
+
+        continue; // تخطي منطق المنتجات العادية والانتقال للعنصر التالي بالسلة
       }
 
-      product.totalUnits -= needQty;
-
-      if ( product.unit_type === "كرتونة"
-      ) {
-
-        product.availableQuantity =
-        Math.floor(product.totalUnits /product.unitsPerPackage
-        );
-
-      }
-      comboPrice += needQty * product.packageSellingPrice;
-
-      await product.save({ session});
-
-    }
-    // تطبيق الخصم
-    let finalComboPrice =comboPrice;
-    if (
-      combo.discountType ==="percentage" ) {
-      finalComboPrice -=
-      (
-        comboPrice *
-        combo.discountValue
-      ) / 100;
-
-    }
-
-    if (
-      combo.discountType ==="fixed"
-    ) {finalComboPrice -=combo.discountValue;
-    }
-
-    finalComboPrice = Math.max(0,finalComboPrice );
-
-    // usage
-    if (customerUsed) {
-      customerUsed.count +=quantity;
-    } else {
-
-      combo.customersUsed.push({
-  user:userId,
-  count:quantity
-      });
-
-    }
-
-    combo.soldCount += quantity;
-
-    await combo.save({session});
-
-    item.price =finalComboPrice
-    item.subtotal =finalComboPrice *quantity
-    item.comboTitle = combo.title;
-
-    continue;
-
-  }
-
+      // ==========================================
+      // 🍎 منطق المنتجات العادية والعروض الفرعية
+      // ==========================================
       const productRef = await Product.findById(item.product).session(session);
-      if (!productRef) throw new Error("أحد المنتجات غير موجود");
+      if (!productRef) throw new Error("أحد المنتجات المطلوبة غير موجود");
 
-      // ==========================================
-      // 🛠️ منطق جلب سعر العرض المظبوط (DB ONLY)
-      // ==========================================
       let price = 0;
       let isOfferItem = item.isOffer === true || item.isOffer === "true";
       let offerTitle = "";
 
       if (isOfferItem) {
-        // البحث عن عرض يحتوي على المنتج ونشط وضمن الفترة الزمنية ولم يتخطى الليميت
         const offer = await Offer.findOne({
           active: true,
           startDate: { $lte: now },
@@ -638,7 +613,6 @@ exports.createOrderV2 = async (req, res) => {
           "products.product": productRef._id
         }).session(session);
 
-        // التحقق من صلاحية العرض والكمية المتاحة في المجلة
         if (offer && offer.soldCount < offer.totalLimit) {
           const offerProduct = offer.products.find(
             (p) => p.product.toString() === productRef._id.toString()
@@ -648,56 +622,41 @@ exports.createOrderV2 = async (req, res) => {
             price = Number(offerProduct.offerPrice);
             offerTitle = offer.title;
             
-            // تحديث عدد المبيعات في المجلة فوراً داخل الـ Transaction
             offer.soldCount += quantity || 1;
 
-const existCustomerUsed = offer.customersUsed.find(
-  e => e.id.toString() === userId.toString()
-);
+            const existCustomerUsed = offer.customersUsed.find(
+              e => e.id.toString() === userId.toString()
+            );
 
-if (existCustomerUsed) {
-  const existProduct = existCustomerUsed.order.find(
-    o => o.product.toString() === productRef._id.toString()
-  );
-
-  if (existProduct) {
-    existProduct.count += quantity;
-  } else {
-    existCustomerUsed.order.push({
-      product: productRef._id,
-      count: quantity
-    });
-  }
-
-} else {
-  offer.customersUsed.push({
-    id: userId,
-    order: [
-      {
-        product: productRef._id,
-        count: quantity
-      }
-    ]
-  });
-}
+            if (existCustomerUsed) {
+              const existProduct = existCustomerUsed.order.find(
+                o => o.product.toString() === productRef._id.toString()
+              );
+              if (existProduct) {
+                existProduct.count += quantity;
+              } else {
+                existCustomerUsed.order.push({ product: productRef._id, count: quantity });
+              }
+            } else {
+              offer.customersUsed.push({
+                id: userId,
+                order: [{ product: productRef._id, count: quantity }]
+              });
+            }
 
             await offer.save({ session });
           }
         }
 
-        // لو لم يجد عرض صالح في الـ DB (رغم إشارة الفرونت)، نلغي الـ Flag ونأخذ السعر الأصلي
         if (!price || isNaN(price)) {
           isOfferItem = false;
           price = item.unit_type === "قطعة" ? productRef.pieceSellingPrice : productRef.packageSellingPrice;
         }
       } else {
-        // المنتج عادي
         price = item.unit_type === "قطعة" ? productRef.pieceSellingPrice : productRef.packageSellingPrice;
       }
 
-      // ==========================================
-      // STOCK LOGIC
-      // ==========================================
+      // حساب مخزون المنتجات العادية
       let outOfStock = false;
       if (item.unit_type === "قطعة") {
         if (productRef.totalUnits < quantity) outOfStock = true;
@@ -705,7 +664,7 @@ if (existCustomerUsed) {
           productRef.totalUnits -= quantity;
           productRef.availableQuantity = productRef.unit_type === "كرتونة" 
             ? Math.floor(productRef.totalUnits / productRef.unitsPerPackage) 
-            : productRef.availableQuantity - quantity;
+            : productRef.totalUnits;
         }
       } else {
         if (productRef.availableQuantity < quantity) outOfStock = true;
@@ -716,23 +675,26 @@ if (existCustomerUsed) {
       }
 
       if (outOfStock) {
-        cartExist.items = cartExist.items.filter(c => !(c.product.toString() === item.product.toString() && c.unit_type === item.unit_type));
+        // حماية المخزن وتحديث السلة المحلية عند الفشل المباشر
+        cartExist.items = cartExist.items.filter(c => !(c.product?.toString() === item.product?.toString() && c.unit_type === item.unit_type));
         await cartExist.save({ session });
-        throw new Error(`المخزون نفد للمنتج: ${productRef.productName}`);
+        throw new Error(`المخزون غير كافٍ للمنتج: ${productRef.productName}`);
       }
 
       await productRef.save({ session });
 
-      // تثبيت البيانات في مصفوفة الـ items التي ستخزن في الطلب
+      // تثبيت البيانات للمنتج العادي
+      item.comboId = null;
+      item.productName = productRef.productName;
       item.price = price;
       item.subtotal = quantity * price;
       item.isOfferItem = isOfferItem;
+      item.isCombo = false;
       item.offerTitle = offerTitle;
     }
 
+    // حساب الإجماليات بعد معالجة كافة العناصر وتجهيز الأسعار بدقة
     const totalPrice = items.reduce((acc, curr) => acc + curr.subtotal, 0);
-    cartExist.items = [];
-    await cartExist.save({ session });
 
     let proofImage = null;
     if (payment.method === "wallet") {
@@ -742,11 +704,12 @@ if (existCustomerUsed) {
     const discount = Number(req.body.discount || 0);
     const finalPrice = Math.max(0, (totalPrice + shippingPrice) - discount);
 
+    // إنشاء الطلب الفعلي داخل الـ Transaction الحالية
     const [order] = await Order.create([{
       user: userId,
       customerName,
       phone,
-      items,
+      items, // أصبحت مصفوفة نظيفة ومتوافقة بالكامل مع الـ Schema
       totalPrice,
       shippingPrice,
       discount,
@@ -755,7 +718,9 @@ if (existCustomerUsed) {
       finalPrice
     }], { session });
 
-
+    // 💡 الأمان: تفريغ السلة "فقط وحصرياً" بعد نجاح إنشاء الـ Order كاملاً وبدون أخطاء
+    cartExist.items = [];
+    await cartExist.save({ session });
 
     await session.commitTransaction();
     session.endSession();
@@ -763,8 +728,12 @@ if (existCustomerUsed) {
     return res.status(201).json({ message: "تم إنشاء الطلب بنجاح", order });
 
   } catch (err) {
-    if (session) { await session.abortTransaction(); session.endSession(); }
-    return res.status(500).json({ message: err.message });
+    if (session) { 
+      await session.abortTransaction(); 
+      session.endSession(); 
+    }
+    console.error("Order Creation Error V2: ", err);
+    return res.status(500).json({ message: err.message || "عذراً، حدث خطأ أثناء تنفيذ الطلب" });
   }
 };
 
