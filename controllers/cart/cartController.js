@@ -485,6 +485,9 @@ exports.updateCart = async (req, res) => {
           quantity: qty,
           offerPrice: item.offerPrice ? Number(item.offerPrice) : null,
 
+          
+    allowedRemaining:
+      Number(item.allowedRemaining) || 0,
           comboProducts: Array.isArray(item.items) ? item.items.map(subItem => ({
             product: subItem.product,
             productName: subItem.productName,
