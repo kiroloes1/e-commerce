@@ -20,7 +20,7 @@ const cartSchema = new mongoose.Schema({
             comboId: { type: mongoose.Schema.Types.ObjectId, ref:"ComboOffer" , default: null },
             title: { type: String, default: null },
 
-            allowedRemaining:{type:Number , default:1},
+            allowedRemaining:{type:Number , default:0},
             comboProducts: [
                 {
                     product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
