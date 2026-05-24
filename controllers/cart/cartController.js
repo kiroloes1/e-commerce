@@ -520,8 +520,8 @@ exports.updateCart = async (req, res) => {
         isOffer: isOffer,      
         offerPrice: offerPrice || null,
         maxPerUser: item.maxPerUser ? Number(item.maxPerUser) : null,
-  // allowedRemaining:
-  //   Number(item.allowedRemaining) || 0,
+  allowedRemaining:
+    Number(item.allowedRemaining) || 0,
         isCombo: false,
         comboId: null,
         title: null,
