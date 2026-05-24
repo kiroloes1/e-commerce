@@ -122,6 +122,9 @@ exports.addToCart = async (req, res) => {
 
             isCombo: true,
 
+              allowedRemaining:
+              Number(newItem.allowedRemaining) || 0,
+
             comboId:
               newItem.comboId,
 
@@ -283,6 +286,9 @@ exports.addToCart = async (req, res) => {
       else {
 
         cart.items.push({
+
+            allowedRemaining:
+    Number(newItem.allowedRemaining) || 0,
 
           product:
             newItem.product,
@@ -514,7 +520,8 @@ exports.updateCart = async (req, res) => {
         isOffer: isOffer,      
         offerPrice: offerPrice || null,
         maxPerUser: item.maxPerUser ? Number(item.maxPerUser) : null,
-
+  allowedRemaining:
+    Number(item.allowedRemaining) || 0,
         isCombo: false,
         comboId: null,
         title: null,
