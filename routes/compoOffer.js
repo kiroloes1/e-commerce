@@ -10,8 +10,6 @@ const comboController = require(`${__dirname}/../controllers/order/compoOffer`);
 
 
 
-// protect all routes
-router.use(authMiddleware.protected);
 
 // Get all Combo Offers
 router.get("/", comboController.getComboOffers);
@@ -24,6 +22,10 @@ router.get(
   "/:comboId/usage",
   comboController.checkComboUsage
 );
+
+// protect all routes
+router.use(authMiddleware.protected);
+
 
 // allow only admin + superadmin
 router.use(role("superadmin", "admin"));
