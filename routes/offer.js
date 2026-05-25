@@ -7,8 +7,7 @@ const { role } = require("../middlewares/authorization");
 const offerController = require(`../controllers/order/offer`);
 
 
-// protect all routes
-router.use(authMiddleware.protected);
+
 
 
 /**
@@ -28,6 +27,8 @@ router.get("/checkOfferUsage/:offerId/:productId", offerController.checkOfferUsa
 router.get("/:id", offerController.getOfferById);
 
 
+// protect all routes
+router.use(authMiddleware.protected);
 
 // allow only admin + superadmin
 router.use(role("superadmin", "admin"));
