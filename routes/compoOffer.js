@@ -17,14 +17,15 @@ router.get("/", comboController.getComboOffers);
 // Get single Combo Offer
 router.get("/:id", comboController.getComboOfferById);
 
+
+
+// protect all routes
+router.use(authMiddleware.protected);
 // Check usage (user auth required)
 router.get(
   "/:comboId/usage",
   comboController.checkComboUsage
 );
-
-// protect all routes
-router.use(authMiddleware.protected);
 
 
 // allow only admin + superadmin
