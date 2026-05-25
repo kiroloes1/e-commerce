@@ -18,7 +18,7 @@ router.get("/", offerController.getOffers);
 router.get("/getProducts", offerController.getProducts);
 router.get("/searchProducts", offerController.searchProducts);
 
-router.get("/checkOfferUsage/:offerId/:productId", offerController.checkOfferUsage);
+
 
 
 /**
@@ -29,6 +29,7 @@ router.get("/:id", offerController.getOfferById);
 
 // protect all routes
 router.use(authMiddleware.protected);
+router.get("/checkOfferUsage/:offerId/:productId", offerController.checkOfferUsage);
 
 // allow only admin + superadmin
 router.use(role("superadmin", "admin"));
