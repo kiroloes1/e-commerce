@@ -15,9 +15,10 @@ const authMiddleware = require(`${__dirname}/../middlewares/authMiddleware`);
 const {role}=require(`${__dirname}/../middlewares/authorization`)
 
 
-router.use(authMiddleware.protected);
 router.get("/",getCoupons);
 router.get("/:id",getCoupon);
+router.use(authMiddleware.protected);
+
 router.post("/apply",applyCoupon);
 
 
