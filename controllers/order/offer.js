@@ -57,10 +57,12 @@ exports.searchProducts = async (req, res) => {
         ]
       },
       // {
-      //   _id: 1,
-      //   productName: 1,
-      //   description: 1,
-      //   category: 1
+      //   // _id: 1,
+      //   // productName: 1,
+      //   // description: 1,
+      //   // category: 1,
+      //   // unit_type:1,
+      //   // purchasePrice:1
       // }
     );
 
@@ -116,9 +118,28 @@ exports.createOffer = async (req, res) => {
 // Get All Offers
 exports.getOffers = async (req, res) => {
   try {
-    const offers = await Offer.find()
-      .populate("products.product")
-      .sort({ createdAt: -1 });
+const now = new Date();
+
+const offers = await Offer.find({
+  active: true,
+
+  startDate: {
+    $lte: now
+  },
+
+  endDate: {
+    $gte: now
+  },
+
+  $expr: {
+    $lt: [
+      "$soldCount",
+      "$totalLimit"
+    ]
+  }
+})
+.populate("products.product")
+.sort({ createdAt: -1 });
 
     res.json({
       count: offers.length,
