@@ -50,9 +50,18 @@ exports.createComboOffer = async (req, res) => {
 
 exports.getComboOffers = async (req, res) => {
   try {
-    const combos = await ComboOffer.find()
-      .populate("items.product")
-      .sort({ createdAt: -1 });
+const now = new Date();
+
+const combos = await ComboOffer.find({
+  active: true,
+  startDate: { $lte: now },
+  endDate: { $gte: now },
+  $expr: {
+    $lt: ["$soldCount", "$totalLimit"]
+  }
+})
+.populate("items.product")
+.sort({ createdAt: -1 });
 
     return res.status(200).json({
       count: combos.length,
