@@ -1,6 +1,11 @@
 const ComboOffer = require(`${__dirname}/../../models/compoOffer`);
 const productModel = require(`${__dirname}/../../models/product`);
 
+
+const { getIO } = require(`${__dirname}/../../sockets/socket`);
+const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
+
+
 exports.createComboOffer = async (req, res) => {
   try {
     const {
@@ -35,6 +40,12 @@ exports.createComboOffer = async (req, res) => {
       maxPerUser
     });
 
+    createNotification(
+      null,
+      `تم انشاء عرض جديد: ${combo.title}`,
+      `تم انشاء عرض جديد يحتوي على ${combo.items.length} منتجات. سارع بالاطلاع عليه!`,
+    );
+
     return res.status(201).json({
       message: "تم إنشاء العرض بنجاح",
       combo
@@ -52,6 +63,12 @@ exports.getComboOffers = async (req, res) => {
   try {
 const now = new Date();
 
+// delete expired combos
+await ComboOffer.deleteMany({
+  endDate: { $lt: now }
+});
+
+// get active conbos
 const combos = await ComboOffer.find({
   active: true,
   startDate: { $lte: now },
@@ -62,6 +79,8 @@ const combos = await ComboOffer.find({
 })
 .populate("items.product")
 .sort({ createdAt: -1 });
+
+
 
     return res.status(200).json({
       count: combos.length,
