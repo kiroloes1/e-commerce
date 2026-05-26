@@ -1,5 +1,8 @@
 const Coupon = require(`${__dirname}/../../models/coupon`);
 
+const { getIO } = require(`${__dirname}/../../sockets/socket`);
+const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
+
 // Create Coupon
 exports.createCoupon = async (req, res) => {
 
@@ -21,6 +24,15 @@ exports.createCoupon = async (req, res) => {
             user: req.user.id
 
         });
+
+        createNotification(
+
+            null,
+            `تم انشاء كوبون جديد: ${coupon.code}`,
+            `تم انشاء كوبون جديد بخصم ${coupon.discount}%. سارع بالاطلاع عليه!`,
+        );
+
+
 
         res.status(201).json({
 
