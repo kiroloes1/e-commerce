@@ -2,6 +2,11 @@ const Offer = require("../../models/offer");
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`)
 const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
 const productModel = require(`${__dirname}/../../models/product`);
+
+const { getIO } = require(`${__dirname}/../../sockets/socket`);
+const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
+
+
 // GET  product  to admin
 exports.getProducts = async (req, res) => {
   try {
@@ -104,6 +109,12 @@ exports.createOffer = async (req, res) => {
       image,
     });
 
+        await createNotification(
+          null,
+          `تم انشاء مجلة جديدة: ${offer.title}`,
+          `تم انشاء مجلة جديدة تحتوي على ${offer.products.length} منتجات. سارع بالاطلاع عليها!`,
+        );  
+
     res.status(201).json({
       message: "تم انشاء المجلة",
       offer,
@@ -119,6 +130,11 @@ exports.createOffer = async (req, res) => {
 exports.getOffers = async (req, res) => {
   try {
 const now = new Date();
+
+// delete expired offers
+await Offer.deleteMany({
+  endDate: { $lt: now }
+});
 
 const offers = await Offer.find({
   active: true,
