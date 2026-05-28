@@ -229,40 +229,158 @@ exports.toggleComboStatus = async (req, res) => {
 
 
 exports.checkComboUsage = async (req, res) => {
+
   try {
+
     const { userId } = req.user;
     const { comboId } = req.params;
 
-    const combo = await ComboOffer.findById(comboId);
+    const combo =
+      await ComboOffer.findById(comboId)
+      .populate("items.product");
 
     if (!combo) {
+
       return res.status(404).json({
         message: "العرض غير موجود"
       });
+
     }
 
-    const userUsage = combo.customersUsed.find(
-      c => c.user.toString() === userId.toString()
-    );
+    // التأكد إن كل المنتجات متوفرة
+    for (const item of combo.items) {
 
-    const usedCount = userUsage?.count || 0;
+      const product = item.product;
 
-    const remaining = Math.max(0, combo.maxPerUser - usedCount);
+      // المنتج اتحذف
+      if (!product) {
 
-    const canTake = remaining > 0;
+        return res.status(200).json({
+
+          message:
+          "للأسف أحد منتجات العرض غير متوفر",
+
+          data: {
+            comboId,
+            usedCount: 0,
+            remaining: 0,
+            canTake: false
+          }
+
+        });
+
+      }
+
+      // تحديد المخزون حسب نوع الوحدة
+      const stock =
+        item.unit_type === "قطعة"
+          ? product.totalUnits
+          : product.availableQuantity;
+
+      // المخزون غير كافي
+      if (stock < item.quantity) {
+
+        return res.status(200).json({
+
+          message:
+          `للأسف المتبقي من ${product.productName} داخل العرض هو ${stock}`,
+
+          data: {
+            comboId,
+            usedCount: 0,
+            remaining: 0,
+            canTake: false
+          }
+
+        });
+
+      }
+
+    }
+
+    // استخدام العميل
+    const userUsage =
+      combo.customersUsed.find(
+
+        c =>
+
+        c.user.toString() ===
+        userId.toString()
+
+      );
+
+    const usedCount =
+      userUsage?.count || 0;
+
+    // المتبقي للمستخدم
+    const userRemaining =
+      Math.max(
+        0,
+        combo.maxPerUser - usedCount
+      );
+
+    // نحسب أقل كمية متاحة للـ combo بالكامل
+    let comboStock = Infinity;
+
+    for (const item of combo.items) {
+
+      const product = item.product;
+
+      const stock =
+        item.unit_type === "قطعة"
+          ? product.totalUnits
+          : product.availableQuantity;
+
+      const availableCombos =
+        Math.floor(stock / item.quantity);
+
+      comboStock =
+        Math.min(
+          comboStock,
+          availableCombos
+        );
+
+    }
+
+    // المتبقي الحقيقي
+    const remaining =
+      Math.min(
+        userRemaining,
+        comboStock
+      );
+
+    const canTake =
+      remaining > 0;
 
     return res.status(200).json({
-      message: "تم جلب بيانات العرض",
+
+      message:
+      "تم جلب بيانات العرض",
+
       data: {
+
         comboId,
+
         usedCount,
+
         remaining,
+
         canTake
+
       }
+
     });
-  } catch (err) {
-    return res.status(500).json({
-      message: err.message
-    });
+
   }
+
+  catch(err){
+
+    return res.status(500).json({
+
+      message: err.message
+
+    });
+
+  }
+
 };
