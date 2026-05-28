@@ -60,7 +60,7 @@ app.use("/v1/offer",offerRoute );
 app.use("/v1/compoOffer",compoOffer );
 
 
-app.use("/", backupRoute);
+app.use("/v1", backupRoute);
 
 
 
