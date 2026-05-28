@@ -299,7 +299,8 @@ exports.checkOfferUsage = async (req, res) => {
     const { offerId, productId } = req.params;
 
     const offer =
-      await Offer.findById(offerId);
+      await Offer.findById(offerId)
+      .populate("products.product");
 
     if (!offer) {
 
@@ -314,7 +315,8 @@ exports.checkOfferUsage = async (req, res) => {
 
         p =>
 
-        p.product.toString() ===
+        p.product &&
+        p.product._id.toString() ===
         productId
 
       );
@@ -325,6 +327,41 @@ exports.checkOfferUsage = async (req, res) => {
 
         message:
         "المنتج غير موجود داخل العرض"
+
+      });
+
+    }
+
+    // تحديد المخزون حسب نوع الوحدة
+    const productStock =
+      offerProduct.unit_type === "قطعة"
+        ? offerProduct.product.totalUnits
+        : offerProduct.product.availableQuantity;
+
+    // لو المخزون خلص
+    if (productStock <= 0) {
+
+      return res.status(200).json({
+
+        message:
+        "للأسف خلص المنتج من العرض",
+
+        data:{
+
+          offerId,
+
+          productId,
+
+          maxPerUser:
+          offerProduct.maxPerUser,
+
+          usedCount:0,
+
+          remaining:0,
+
+          canTake:false
+
+        }
 
       });
 
@@ -358,11 +395,18 @@ exports.checkOfferUsage = async (req, res) => {
     const maxPerUser =
       offerProduct.maxPerUser;
 
-    const remaining =
+    // المتبقي للمستخدم
+    const userRemaining =
       Math.max(
         0,
-        maxPerUser -
-        usedCount
+        maxPerUser - usedCount
+      );
+
+    // المتبقي الحقيقي في المخزون
+    const remaining =
+      Math.min(
+        userRemaining,
+        productStock
       );
 
     const canTake =
