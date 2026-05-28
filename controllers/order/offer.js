@@ -106,7 +106,9 @@ exports.createOffer = async (req, res) => {
       startDate,
       endDate,
       totalLimit,
-      image,
+      image: {
+        url:image || "",
+      }
     });
 
         await createNotification(
@@ -154,13 +156,23 @@ const offers = await Offer.find({
     ]
   }
 })
-.populate("products.product")
+.populate({
+  path: "products.product",
+  match: {
+    status: "active",
+    availableQuantity: { $gt: 0 }
+  }
+})
 .sort({ createdAt: -1 });
 
-    res.json({
-      count: offers.length,
-      offers,
-    });
+const cleanedOffers = offers.map(offer => {
+  offer.products = offer.products.filter(p => p.product !== null);
+  return offer;
+});
+res.json({
+  count: cleanedOffers.length,
+  offers: cleanedOffers
+});
   } catch (err) {
     res.status(500).json({
       message: err.message,
