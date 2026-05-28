@@ -70,6 +70,8 @@ exports.searchProducts = async (req, res) => {
         purchasePrice:1,
         pieceSellingPrice:1,
         packageSellingPrice:1,
+        availableQuantity:1,
+        totalUnits:1
         
       }
     );
