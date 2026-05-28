@@ -61,14 +61,17 @@ exports.searchProducts = async (req, res) => {
           }
         ]
       },
-      // {
-      //   // _id: 1,
-      //   // productName: 1,
-      //   // description: 1,
-      //   // category: 1,
-      //   // unit_type:1,
-      //   // purchasePrice:1
-      // }
+      {
+        _id: 1,
+        productName: 1,
+        description: 1,
+        category: 1,
+        unit_type:1,
+        purchasePrice:1,
+        pieceSellingPrice:1,
+        packageSellingPrice:1,
+        
+      }
     );
 
     return res.status(200).json({
