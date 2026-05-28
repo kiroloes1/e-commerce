@@ -7,7 +7,9 @@ const { createNotification } = require(`${__dirname}/../../controllers/notificat
 
 
 exports.createComboOffer = async (req, res) => {
+
   try {
+
     const {
       title,
       description,
@@ -21,40 +23,117 @@ exports.createComboOffer = async (req, res) => {
       image
     } = req.body;
 
+    // validation
     if (!title || !items || items.length === 0) {
+
       return res.status(400).json({
         message: "بيانات العرض غير مكتملة"
       });
+
     }
 
-    const combo = await ComboOffer.create({
-      title,
-      description,
-      items: typeof items === "string" ? JSON.parse(items) : items,
-      startDate,
-      endDate,
-      totalLimit,
-      discountType,
-      discountValue,
-      image,
-      maxPerUser
-    });
+    // parse items لو جاي string
+    const parsedItems =
+      typeof items === "string"
+        ? JSON.parse(items)
+        : items;
 
+    // التأكد من المنتجات والمخزون
+    for (const item of parsedItems) {
+
+      const product =
+        await Product.findById(item.product);
+
+      // المنتج غير موجود
+      if (!product) {
+
+        return res.status(404).json({
+
+          message:
+          "أحد المنتجات غير موجود"
+
+        });
+
+      }
+
+      // تحديد المخزون حسب نوع الوحدة
+      const stock =
+        item.unit_type === "قطعة"
+          ? product.totalUnits
+          : product.availableQuantity;
+
+      // المخزون غير كافي
+      if (stock < item.quantity) {
+
+        return res.status(400).json({
+
+          message:
+          `الكمية المتوفرة من ${product.productName} هي ${stock} فقط`
+
+        });
+
+      }
+
+    }
+
+    // إنشاء العرض
+    const combo =
+      await ComboOffer.create({
+
+        title,
+
+        description,
+
+        items: parsedItems,
+
+        startDate,
+
+        endDate,
+
+        totalLimit,
+
+        discountType,
+
+        discountValue,
+
+        image,
+
+        maxPerUser
+
+      });
+
+    // notification
     createNotification(
+
       null,
+
       `تم انشاء عرض جديد: ${combo.title}`,
-      `تم انشاء عرض جديد يحتوي على ${combo.items.length} منتجات. سارع بالاطلاع عليه!`,
+
+      `تم انشاء عرض جديد يحتوي على ${combo.items.length} منتجات. سارع بالاطلاع عليه!`
+
     );
 
     return res.status(201).json({
-      message: "تم إنشاء العرض بنجاح",
+
+      message:
+      "تم إنشاء العرض بنجاح",
+
       combo
+
     });
-  } catch (err) {
-    return res.status(500).json({
-      message: err.message
-    });
+
   }
+
+  catch (err) {
+
+    return res.status(500).json({
+
+      message: err.message
+
+    });
+
+  }
+
 };
 
 
