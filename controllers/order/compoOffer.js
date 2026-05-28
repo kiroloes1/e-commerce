@@ -61,38 +61,57 @@ exports.createComboOffer = async (req, res) => {
 
 exports.getComboOffers = async (req, res) => {
   try {
-const now = new Date();
+    const now = new Date();
 
-// delete expired combos
-await ComboOffer.deleteMany({
-  endDate: { $lt: now }
-});
+    // delete expired combos
+    await ComboOffer.deleteMany({
+      endDate: { $lt: now }
+    });
 
-// get active conbos
-const combos = await ComboOffer.find({
-  active: true,
-  startDate: { $lte: now },
-  endDate: { $gte: now },
-  $expr: {
-    $lt: ["$soldCount", "$totalLimit"]
-  }
-})
-.populate("items.product")
-.sort({ createdAt: -1 });
+    // get active combos
+    let combos = await ComboOffer.find({
+      active: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+      $expr: {
+        $lt: ["$soldCount", "$totalLimit"]
+      }
+    })
+      .populate("items.product")
+      .sort({ createdAt: -1 });
 
+    // filter invalid combos
+    combos = combos
+      .map(combo => {
+        // remove null products first
+        combo.items = combo.items.filter(item => item.product);
 
+        const isValid = combo.items.every(item => {
+          const product = item.product;
+
+          const stock =
+            item.unit_type === "قطعة"
+              ? product.totalUnits
+              : product.availableQuantity;
+
+          return stock >= item.quantity;
+        });
+
+        return isValid ? combo : null;
+      })
+      .filter(Boolean);
 
     return res.status(200).json({
       count: combos.length,
       combos
     });
+
   } catch (err) {
     return res.status(500).json({
       message: err.message
     });
   }
 };
-
 
 
 exports.getComboOfferById = async (req, res) => {
