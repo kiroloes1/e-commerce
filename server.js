@@ -69,7 +69,7 @@ async function seedUsers() {
 
         let users = [];
 
-        for (let i = 1; i <= 800; i++) {
+        for (let i = 1000; i <= 1800; i++) {
 
             users.push({
                 userName: `user${i}`,
