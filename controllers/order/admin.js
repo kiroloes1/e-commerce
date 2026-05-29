@@ -5,17 +5,80 @@ const { createNotification } = require(`${__dirname}/../../controllers/notificat
  const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
  const mongoose = require("mongoose");
 //view all orders
+// view all orders
 exports.viewAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find({},{orderNumber:1,user:1,finalPrice:1 
-            ,customerName:1 ,phone:1 
-            ,  address:1  ,status:1 ,payment:1 ,createdAt:1})
-            .sort({ createdAt: -1 })
-            .populate("user", "userName  phoneNumber ");
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const search = req.query.search || "";
+        const status = req.query.status || "all";
+
+        const skip = (page - 1) * limit;
+
+        // 1. بناء استعلام الفلترة الأساسي
+        let query = {};
+
+        // الفلترة حسب الحالة (Tabs)
+        if (status !== "all") {
+            query.status = status;
+        }
+
+        // الفلترة حسب كلمة البحث
+        if (search) {
+            query.$or = [
+                { customerName: { $regex: search, $options: "i" } },
+                { orderNumber: { $regex: search, $options: "i" } },
+                { phone: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        // 2. جلب الطلبات المفلترة والمقسمة لصفحات
+        const orders = await Order.find(query, {
+            orderNumber: 1,
+            user: 1,
+            finalPrice: 1,
+            customerName: 1,
+            phone: 1,
+            address: 1,
+            status: 1,
+            payment: 1,
+            createdAt: 1
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("user", "userName phoneNumber");
+
+        // 3. حساب إجمالي الطلبات المتوافقة مع الفلترة الحالية لضبط الـ Pagination
+        const totalFilteredOrders = await Order.countDocuments(query);
+
+        // 4. جلب إحصائيات سريعة للعدادات العلوية وعدادات الـ Tabs دون تحميل البيانات كاملة
+        const totalAll = await Order.countDocuments({});
+        const totalDelivered = await Order.countDocuments({ status: "delivered" });
+        const totalActive = await Order.countDocuments({ status: { $in: ["pending", "confirmed", "shipped"] } });
+        
+        // حساب العداد الخاص بكل تبويب (Tab) ليظهر بالـ Frontend
+        const tabCounts = {
+            all: totalAll,
+            pending: await Order.countDocuments({ status: "pending" }),
+            confirmed: await Order.countDocuments({ status: "confirmed" }),
+            shipped: await Order.countDocuments({ status: "shipped" }),
+            delivered: totalDelivered,
+            cancelled: await Order.countDocuments({ status: "cancelled" })
+        };
 
         res.status(200).json({
             results: orders.length,
-            orders
+            orders,
+            currentPage: page,
+            totalPages: Math.ceil(totalFilteredOrders / limit),
+            totalOrders: totalFilteredOrders,
+            stats: {
+                total: totalAll,
+                delivered: totalDelivered,
+                active: totalActive
+            },
+            tabCounts
         });
 
     } catch (err) {
