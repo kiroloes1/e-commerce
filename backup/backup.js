@@ -21,7 +21,7 @@ const oauth2Client = new google.auth.OAuth2(
 ========================= */
 
 async function getDB() {
-  const client = new MongoClient(process.env.DATABASE);
+  const client = new MongoClient(process.env.MONGO_URI);
 
   await client.connect();
 
