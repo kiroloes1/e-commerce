@@ -290,19 +290,6 @@ cron.schedule(
   }
 );
 
-/* =========================
-   PROTECTED ROUTES
-========================= */
-
-router.use(authMiddleware.protected);
-
-router.use(
-  authorizationMiddleware.role("superadmin", "manager")
-);
-
-/* =========================
-   BACKUP ROUTE
-========================= */
 
 router.get("/backup", async (req, res) => {
   try {
@@ -319,6 +306,22 @@ router.get("/backup", async (req, res) => {
     });
   }
 });
+
+/* =========================
+   PROTECTED ROUTES
+========================= */
+
+router.use(authMiddleware.protected);
+
+router.use(
+  authorizationMiddleware.role("superadmin", "manager")
+);
+
+/* =========================
+   BACKUP ROUTE
+========================= */
+
+
 
 /* =========================
    MANUAL DATA ROUTE
