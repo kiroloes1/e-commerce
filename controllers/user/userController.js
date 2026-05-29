@@ -169,17 +169,30 @@ exports.getUser = async (req, res) => {
   }
 };
 
+
 // get all users
 exports.getUsers = async (req, res) => {
   try {
-
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || "";
 
     const skip = (page - 1) * limit;
 
+    // بناء استعلام الفلترة والبحث
+    let query = { role: "customer" };
+    
+    if (search) {
+      query.$or = [
+        { userName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phoneNumber: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // جلب المستخدمين المفلترين لهذه الصفحة فقط
     const users = await UserModel.find(
-      { role: "customer" },
+      query,
       {
         userName: 1,
         email: 1,
@@ -192,28 +205,34 @@ exports.getUsers = async (req, res) => {
     .limit(limit)
     .lean();
 
-    const totalUsers = await UserModel.countDocuments({
-      role: "customer"
-    });
+    // حساب الإجمالي بناءً على استعلام البحث
+    const totalUsers = await UserModel.countDocuments(query);
+
+    // حساب إحصائيات عامة سريعة لكل العملاء (اختياري وبدون تحميل البيانات كاملة)
+    const totalAll = await UserModel.countDocuments({ role: "customer" });
+    const totalActive = await UserModel.countDocuments({ role: "customer", active: true });
+    const totalBlocked = await UserModel.countDocuments({ role: "customer", active: false });
 
     res.status(200).json({
       message: "تم جلب المستخدمين بنجاح",
       users,
       currentPage: page,
       totalPages: Math.ceil(totalUsers / limit),
-      totalUsers
+      totalUsers,
+      stats: {
+        total: totalAll,
+        active: totalActive,
+        blocked: totalBlocked
+      }
     });
 
   } catch (err) {
-
     res.status(500).json({
       message: "حدث خطأ أثناء جلب المستخدمين",
       error: err.message
     });
-
   }
 };
-
 
 // get all admin
 exports.getAllAdmin = async (req, res) => {
