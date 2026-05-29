@@ -172,18 +172,45 @@ exports.getUser = async (req, res) => {
 // get all users
 exports.getUsers = async (req, res) => {
   try {
-    const users = await UserModel.find({role:"customer"}, {userName:1 ,email:1 ,phoneNumber:1 ,role:1 ,active:1});
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    const skip = (page - 1) * limit;
+
+    const users = await UserModel.find(
+      { role: "customer" },
+      {
+        userName: 1,
+        email: 1,
+        phoneNumber: 1,
+        role: 1,
+        active: 1
+      }
+    )
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+    const totalUsers = await UserModel.countDocuments({
+      role: "customer"
+    });
 
     res.status(200).json({
-      message: "تم جلب جميع المستخدمين بنجاح",
+      message: "تم جلب المستخدمين بنجاح",
       users,
-      counts: users.length
+      currentPage: page,
+      totalPages: Math.ceil(totalUsers / limit),
+      totalUsers
     });
 
   } catch (err) {
+
     res.status(500).json({
-      message: "حدث خطأ أثناء جلب المستخدمين: " + err.message
+      message: "حدث خطأ أثناء جلب المستخدمين",
+      error: err.message
     });
+
   }
 };
 
