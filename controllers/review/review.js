@@ -134,19 +134,68 @@ exports.updateReview = async (req, res) => {
 };
 
 
-exports.getReviews=async(req,res)=>{
-      try {
-        const reviews = await ReviewModel.find().populate('productId', 'productName description' ).populate('userId', 'userName').limit(50);   
-        return res.status(200).json({
-            data: reviews
-        }).sort({ createdAt: -1 });
-    } catch (err) {
-        return res.status(500).json({
-            message: "Server error",
-            error: err.message
-        });
-    }  
-}
+exports.getReviews = async (req, res) => {
+  try {
+    // 1. استخراج معاملات الصفحات وضبط الافتراضي
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10; // 10 تقييمات في الصفحة كمثال
+    const skip = (page - 1) * limit;
+
+    let pipeline = [];
+
+    // 2. ربط البيانات (Populate يدوي بالـ Aggregation)
+    pipeline.push(
+      {
+        $lookup: {
+          from: "products", // اسم كوليكشن المنتجات في الداتابيز
+          localField: "productId",
+          foreignField: "_id",
+          as: "productId"
+        }
+      },
+      { $unwind: { path: "$productId", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "users", // اسم كوليكشن المستخدمين في الداتابيز
+          localField: "userId",
+          foreignField: "_id",
+          as: "userId"
+        }
+      },
+      { $unwind: { path: "$userId", preserveNullAndEmptyArrays: true } }
+    );
+
+    // 3. الترتيب من الأحدث للأقدم
+    pipeline.push({ $sort: { createdAt: -1 } });
+
+    // 4. تقسيم البيانات (Pagination باستخدام Facet)
+    pipeline.push({
+      $facet: {
+        metadata: [{ $count: "total" }],
+        data: [{ $skip: skip }, { $limit: limit }]
+      }
+    });
+
+    const aggregationResult = await ReviewModel.aggregate(pipeline);
+
+    const reviews = aggregationResult[0].data || [];
+    const totalCount = aggregationResult[0].metadata[0]?.total || 0;
+
+    return res.status(200).json({
+      message: "تم جلب التقييمات بنجاح",
+      data: reviews,
+      total: totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit)
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message
+    });
+  }  
+};
 
 // best reviews 
 exports.getBestReviews = async (req, res) => {
