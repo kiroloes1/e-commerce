@@ -275,41 +275,10 @@ exports.createFromExcel = async (req, res) => {
 // GET all products admin
 exports.getAllProducts = async (req, res) => {
   try {
-    // 1. استخراج المعاملات وضبط القيم الافتراضية
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 16;
-    const search = req.query.search || "";
-    const category = req.query.category || "الكل";
-
-    const skip = (page - 1) * limit;
-
-    // 2. بناء مراحل استعلام الـ Aggregation بشكل ديناميكي
-    let pipeline = [];
-
-    // مرحلة الفلترة المبدئية (الأقسام والبحث) لتقليل حجم البيانات المستهدفة بسرعة
-    let matchQuery = {};
-
-    if (category !== "الكل") {
-      matchQuery.category = category;
-    }
-
-    if (search.trim() !== "") {
-      matchQuery.$or = [
-        { productName: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } }
-      ];
-    }
-
-    // إضافة مرحلة الـ $match للـ Pipeline إذا كانت هناك شروط
-    if (Object.keys(matchQuery).length > 0) {
-      pipeline.push({ $match: matchQuery });
-    }
-
-    // ربط المراجعات لحساب التقييم المتوسط
-    pipeline.push(
+    const products = await productModel.aggregate([
       {
         $lookup: {
-          from: "reviews",
+          from: "reviews", // اسم collection
           localField: "_id",
           foreignField: "productId",
           as: "reviews"
@@ -320,29 +289,12 @@ exports.getAllProducts = async (req, res) => {
           averageRating: { $avg: "$reviews.rating" }
         }
       }
-    );
-
-    // حساب إجمالي المنتجات المتوافقة مع الفلترة الحالية قبل تطبيق الـ Limit والـ Skip
-    // نستخدم الـ Facet لتنفيذ عمليتين (حساب العدد الكلي + جلب المنتجات المحددة) في استعلام واحد سريّع
-    pipeline.push({
-      $facet: {
-        metadata: [{ $count: "total" }],
-        data: [{ $skip: skip }, { $limit: limit }]
-      }
-    });
-
-    const aggregationResult = await productModel.aggregate(pipeline);
-    
-    const products = aggregationResult[0].data || [];
-    const totalCount = aggregationResult[0].metadata[0]?.total || 0;
+    ]);
 
     return res.status(200).json({
-      message: "تم جلب المنتجات بنجاح",
+      message: "تم جلب جميع المنتجات بنجاح",
       data: products,
-      total: totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
-      hasMore: skip + products.length < totalCount
+      length: products.length
     });
 
   } catch (err) {
@@ -351,7 +303,6 @@ exports.getAllProducts = async (req, res) => {
     });
   }
 };
-
 // GET  product  to admin
 exports.getProductByIdAdmin = async (req, res) => {
   try {
