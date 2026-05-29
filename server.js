@@ -62,6 +62,45 @@ app.use("/v1/compoOffer",compoOffer );
 
 app.use("/v1", backupRoute);
 
+const User = require("./models/user"); 
+async function seedUsers() {
+    try {
+
+
+        let users = [];
+
+        for (let i = 1; i <= 800; i++) {
+
+            users.push({
+                userName: `user${i}`,
+                email: `user${i}@gmail.com`,
+                password: "123456",
+                phoneNumber: `010${String(i).padStart(8, '0')}`,
+                address: {
+                    city: "Cairo",
+                    region: "Nasr City",
+                    street: `Street ${i}`,
+                    building: `${i}`,
+                    floor: "1"
+                },
+                role: "customer"
+            });
+
+        }
+
+        await User.insertMany(users);
+
+        console.log("800 Users Created");
+
+        mongoose.connection.close();
+
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+seedUsers();
+
 
 
 const PORT=process.env.PORT || 5000;
