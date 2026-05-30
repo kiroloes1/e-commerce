@@ -54,7 +54,7 @@ exports.getReviewsByProduct = async (req, res) => {
         const reviews = await ReviewModel.find({ productId })
             .populate("userId", "userName")
             .sort({ rating: -1, createdAt: -1 })
-            .limit(30);
+            .limit(50);
 
         return res.status(200).json({
             data: reviews
@@ -77,7 +77,7 @@ exports.getReviewsByUser = async (req, res) => {
         const reviews = await ReviewModel.find({ userId })
             .populate("productId", "productName description")
             .sort({ createdAt: -1 })
-            .limit(30);
+            .limit(50);
 
         return res.status(200).json({
             data: reviews
