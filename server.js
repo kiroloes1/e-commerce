@@ -62,32 +62,32 @@ app.use("/v1/compoOffer",compoOffer );
 
 app.use("/v1", backupRoute);
 
-const Review = require("./models/review");
-const mongoose=require('mongoose')
-async function seedReviews() {
-    try {
+// const Review = require("./models/review");
+// const mongoose=require('mongoose')
+// async function seedReviews() {
+//     try {
 
-        const reviews = [];
+//         const reviews = [];
 
-        for (let i = 0; i < 100; i++) {
-            reviews.push({
-                userId: new mongoose.Types.ObjectId(), // أو User ID حقيقي
-                productId: new mongoose.Types.ObjectId("6a04a8f5d08d76e1728c1be5"),
-                rating: Math.floor(Math.random() * 5) + 1,
-                comment: `Review Number ${i + 1}`
-            });
-        }
+//         for (let i = 0; i < 100; i++) {
+//             reviews.push({
+//                 userId: new mongoose.Types.ObjectId(), // أو User ID حقيقي
+//                 productId: new mongoose.Types.ObjectId("6a04a8f5d08d76e1728c1be5"),
+//                 rating: Math.floor(Math.random() * 5) + 1,
+//                 comment: `Review Number ${i + 1}`
+//             });
+//         }
 
-        await Review.insertMany(reviews);
+//         await Review.insertMany(reviews);
 
-        console.log("500 Reviews Inserted Successfully");
-        process.exit();
-    } catch (err) {
-        console.error(err);
-    }
-}
+//         console.log("500 Reviews Inserted Successfully");
+//         process.exit();
+//     } catch (err) {
+//         console.error(err);
+//     }
+// }
 
-seedReviews();
+// seedReviews();
 
 
 
