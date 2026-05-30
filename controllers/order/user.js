@@ -767,7 +767,7 @@ exports.viewMyOrders = async (req, res) => {
     try {
         const { userId } = req.user;
 
-        const orders = await Order.find({ user: userId },{_id:1,orderNumber:1,finalPrice:1 ,status:1})
+        const orders = await Order.find({ user: userId },{_id:1,orderNumber:1,finalPrice:1 ,status:1 , createdAt:1})
             .sort({ createdAt: -1 });
 
         res.status(200).json({
