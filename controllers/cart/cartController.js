@@ -28,6 +28,7 @@ exports.getCartByUser = async (req, res) => {
         select: "productName description image unit_type"
       });
 
+    
     if (!cart) {
       return res.status(200).json({ items: [] });
     }
