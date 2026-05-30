@@ -49,16 +49,21 @@ exports.createReview = async (req, res) => {
 // get reviews for a product
 exports.getReviewsByProduct = async (req, res) => {
     try {
-        
         const { productId } = req.params;
-        const reviews = await ReviewModel.find({ productId }).populate('userId', 'userName');
+
+        const reviews = await ReviewModel.find({ productId })
+            .populate("userId", "userName")
+            .sort({ rating: -1, createdAt: -1 })
+            .limit(30);
+
         return res.status(200).json({
             data: reviews
-        }).sort({rating: -1, createdAt: -1 }).limit(30);
+        });
+
     } catch (err) {
         return res.status(500).json({
             message: "Server error",
-            error: err.message 
+            error: err.message
         });
     }
 };
@@ -66,12 +71,18 @@ exports.getReviewsByProduct = async (req, res) => {
 // get reviews by user
 exports.getReviewsByUser = async (req, res) => {
     try {
-        
-        const { userId } = req.user;
-        const reviews = await ReviewModel.find({ userId }).populate('productId', 'productName description');
+
+        const userId = req.user.id; 
+
+        const reviews = await ReviewModel.find({ userId })
+            .populate("productId", "productName description")
+            .sort({ createdAt: -1 })
+            .limit(30);
+
         return res.status(200).json({
             data: reviews
-        }).sort({ createdAt: -1 }).limit(30);
+        });
+
     } catch (err) {
         return res.status(500).json({
             message: "Server error",
