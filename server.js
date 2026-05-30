@@ -69,7 +69,7 @@ async function seedReviews() {
 
         const reviews = [];
 
-        for (let i = 0; i < 500; i++) {
+        for (let i = 0; i < 100; i++) {
             reviews.push({
                 userId: new mongoose.Types.ObjectId(), // أو User ID حقيقي
                 productId: new mongoose.Types.ObjectId("6a04a8f5d08d76e1728c1be5"),
