@@ -275,26 +275,73 @@ exports.createFromExcel = async (req, res) => {
 // GET all products admin
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await productModel.aggregate([
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const { search, category, status } = req.query;
+    let matchQuery = {};
+
+    // 1. فلترة البحث (الاسم أو الكود أو الوصف)
+    if (search) {
+      matchQuery.$or = [
+        { productName: { $regex: search, $options: "i" } },
+        { code: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // 2. فلترة التصنيف
+    if (category && category !== "الكل") {
+      matchQuery.category = category;
+    }
+
+    // 3. فلترة الحالة (متوفر / نافذ)
+    if (status && status !== "الكل") {
+      if (status === "متوفر") matchQuery.availableQuantity = { $gt: 0 };
+      if (status === "نافذ") matchQuery.availableQuantity = { $lte: 0 };
+    }
+
+    const productsData = await productModel.aggregate([
+      // الفلترة أولاً لتقليل البيانات المخزنة بالـ Memory
+      { $match: matchQuery },
+      
+      // ربط التقييمات
       {
         $lookup: {
-          from: "reviews", // اسم collection
+          from: "reviews",
           localField: "_id",
           foreignField: "productId",
           as: "reviews"
         }
       },
+      // حساب متوسط التقييم
       {
         $addFields: {
           averageRating: { $avg: "$reviews.rating" }
         }
+      },
+      // الترتيب الافتراضي (مثلاً الأحدث أولاً)
+      { $sort: { createdAt: -1 } },
+      
+      // الـ Facet لعمل Pagination وجلب الـ Total معاً
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [{ $skip: skip }, { $limit: limit }]
+        }
       }
     ]);
 
+    const products = productsData[0].data || [];
+    const totalCount = productsData[0].metadata[0]?.total || 0;
+
     return res.status(200).json({
-      message: "تم جلب جميع المنتجات بنجاح",
+      message: "تم جلب المنتجات بنجاح",
       data: products,
-      length: products.length
+      total: totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit)
     });
 
   } catch (err) {
