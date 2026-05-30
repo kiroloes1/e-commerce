@@ -65,7 +65,7 @@ exports.updateAbout = async (req, res) => {
     const about = await About.findOneAndUpdate(
       {},
       req.body,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true,upsert: true }
     );
 
     if (!about) {
