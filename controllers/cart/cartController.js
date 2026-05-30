@@ -2,6 +2,7 @@ const CartModel=require(`${__dirname}/../../models/cart`);
 const ProductModel = require(`${__dirname}/../../models/product`);
 // get cart by user must be login first
 exports.getCartByUser = async (req, res) => {
+
   try {
 
     const { userId } = req.user;
@@ -11,7 +12,7 @@ exports.getCartByUser = async (req, res) => {
 
       .populate(
         "items.product",
-        "productName description image unit_type totalUnits availableQuantity status"
+        "-purchasePrice"
       )
 
       .populate({
@@ -36,26 +37,23 @@ exports.getCartByUser = async (req, res) => {
 
     cart.items = cart.items.filter(item => {
 
-      // =====================
-      // Combo Validation
-      // =====================
+      // ================= COMBO =================
       if (item.isCombo) {
 
         const combo = item.comboId;
 
-        // الكومبو اتحذف
         if (!combo) {
           modified = true;
           return false;
         }
 
-        const isAvailable =
+        const valid =
           combo.active &&
           now >= combo.startDate &&
           now <= combo.endDate &&
           combo.soldCount < combo.totalLimit;
 
-        if (!isAvailable) {
+        if (!valid) {
           modified = true;
           return false;
         }
@@ -63,18 +61,14 @@ exports.getCartByUser = async (req, res) => {
         return true;
       }
 
-      // =====================
-      // Product Validation
-      // =====================
+      // ================= PRODUCT =================
       const product = item.product;
 
-      // المنتج اتحذف
       if (!product) {
         modified = true;
         return false;
       }
 
-      // المنتج غير متاح
       if (
         product.status === "inactive" ||
         product.status === "out-of-stock"
@@ -83,7 +77,6 @@ exports.getCartByUser = async (req, res) => {
         return false;
       }
 
-      // بيع بالقطعة
       if (
         item.unit_type === "قطعة" &&
         product.totalUnits <= 0
@@ -92,7 +85,6 @@ exports.getCartByUser = async (req, res) => {
         return false;
       }
 
-      // بيع بالكرتونة
       if (
         item.unit_type === "كرتونة" &&
         product.availableQuantity <= 0
@@ -104,21 +96,26 @@ exports.getCartByUser = async (req, res) => {
       return true;
     });
 
-    // حفظ السلة بعد حذف العناصر غير الصالحة
     if (modified) {
       await cart.save();
     }
 
-    return res.status(200).json(cart);
+    return res.status(200).json(
+      cart || { items: [] }
+    );
 
   } catch (err) {
 
     return res.status(500).json({
+
       message: "Server error",
+
       error: err.message
+
     });
 
   }
+
 };
 // create 
 exports.addToCart = async (req, res) => {
