@@ -54,7 +54,7 @@ exports.getReviewsByProduct = async (req, res) => {
         const reviews = await ReviewModel.find({ productId }).populate('userId', 'userName');
         return res.status(200).json({
             data: reviews
-        }).sort({rating: -1, createdAt: -1 });
+        }).sort({rating: -1, createdAt: -1 }).limit(50);
     } catch (err) {
         return res.status(500).json({
             message: "Server error",
@@ -71,7 +71,7 @@ exports.getReviewsByUser = async (req, res) => {
         const reviews = await ReviewModel.find({ userId }).populate('productId', 'productName description');
         return res.status(200).json({
             data: reviews
-        }).sort({ createdAt: -1 });
+        }).sort({ createdAt: -1 }).limit(50);
     } catch (err) {
         return res.status(500).json({
             message: "Server error",
