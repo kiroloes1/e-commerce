@@ -783,6 +783,26 @@ exports.viewMyOrders = async (req, res) => {
 };
 
 
+exports.viewMyOrders2 = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+        const orders = await Order.find({ user: userId }).populate("items.product" ,"image.url  description")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            results: orders.length,
+            orders
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
+}
+
+
 // my confirm order
 exports.viewMyOrdersDeliverd = async (req, res) => {
     try {
@@ -831,6 +851,7 @@ exports.viewMyOrder = async (req, res) => {
         });
     }
 };
+
 
 // Delete pending order (cancel order)
 exports.cancelOrder = async (req, res) => {
