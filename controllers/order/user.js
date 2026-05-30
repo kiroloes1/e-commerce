@@ -761,12 +761,13 @@ exports.createOrderV2 = async (req, res) => {
   }
 };
 
+
 // View my orders
 exports.viewMyOrders = async (req, res) => {
     try {
         const { userId } = req.user;
 
-        const orders = await Order.find({ user: userId }).populate("items.product" ,"image.url  description")
+        const orders = await Order.find({ user: userId },{_id:1,orderNumber:1,finalPrice:1 ,status:1})
             .sort({ createdAt: -1 });
 
         res.status(200).json({
