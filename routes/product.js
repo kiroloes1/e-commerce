@@ -24,8 +24,6 @@ router.get('/all',authMiddleware.protected,role("superadmin" ,"admin"), productC
 //  Search products
 router.get('/search/query', productController.search);
 
-router.get('/export', productController.exportProducts);
-
 
 //  Get all categories (filter products by category)
 router.get('/categories/all', productController.filterProductBasedOnCategory);
@@ -41,6 +39,8 @@ router.use(authMiddleware.protected);
 router.use(role("superadmin" ,"admin"));
 
 
+
+router.get('/export', productController.exportProducts);
 
 
 //      PRODUCTS  
