@@ -533,6 +533,23 @@ exports.filterProductBasedOnCategory=async(req,res)=>{
     
 }
 
+exports.exportProducts = async (req, res) => {
+  try {
+    const products = await ProductModel.find()
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      total: products.length,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 exports.getProductsByCategory = async (req, res) => {
   try {
     const { category } = req.query;
