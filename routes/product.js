@@ -31,6 +31,8 @@ router.get('/categories/all', productController.filterProductBasedOnCategory);
 // get suggestion
 router.get('/suggestion', productController.suggestion);
 
+router.get('/data/export', authMiddleware.protected, role("superadmin" ,"admin"),productController.exportProducts);
+
 //  Get product by ID
 router.get('/:id', productController.getProductById);
 
@@ -39,8 +41,6 @@ router.use(authMiddleware.protected);
 router.use(role("superadmin" ,"admin"));
 
 
-
-router.get('/export', productController.exportProducts);
 
 
 //      PRODUCTS  
