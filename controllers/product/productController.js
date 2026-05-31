@@ -535,7 +535,7 @@ exports.filterProductBasedOnCategory=async(req,res)=>{
 
 exports.exportProducts = async (req, res) => {
   try {
-    const products = await ProductModel.find()
+    const products = await productModel.find()
       .sort({ createdAt: -1 });
 
     res.status(200).json({
