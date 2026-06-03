@@ -92,7 +92,7 @@ exports.searchProducts = async (req, res) => {
 // Create Offer
 exports.createOffer = async (req, res) => {
   try {
-    const { title, products, startDate, endDate, totalLimit,image } = req.body;
+    const { title, products, startDate, endDate, totalLimit,imageUrl } = req.body;
 
     if (!title || !products || products.length === 0) {
       return res.status(400).json({ message: "بيانات المجلة غير مكتملة" });
@@ -112,7 +112,7 @@ exports.createOffer = async (req, res) => {
       endDate,
       totalLimit,
       image: {
-        url:image || "",
+        url:imageUrl || "",
       }
     });
 
