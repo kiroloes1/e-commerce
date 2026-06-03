@@ -639,7 +639,7 @@ exports.createOrderV2 = async (req, res) => {
           "products.product": productRef._id
         }).session(session);
 
-        if (offer && offer.soldCount < offer.totalLimit) {
+        if (offer ) {
           const offerProduct = offer.products.find(
             (p) => p.product.toString() === productRef._id.toString()
           );
