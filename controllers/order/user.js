@@ -634,7 +634,7 @@ exports.createOrderV2 = async (req, res) => {
       if (isOfferItem) {
         const offer = await Offer.findOne({
           active: true,
-          startDate: { $lte: now },
+          
           endDate: { $gte: now },
           "products.product": productRef._id
         }).session(session);
