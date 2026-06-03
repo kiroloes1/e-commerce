@@ -148,9 +148,7 @@ exports.getOffers = async (req, res) => {
     const offers = await Offer.find({
       active: true,
 
-      startDate: {
-        $lte: endOfToday
-      },
+
 
 
       endDate: {
