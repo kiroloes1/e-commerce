@@ -136,48 +136,54 @@ exports.createOffer = async (req, res) => {
 // Get All Offers
 exports.getOffers = async (req, res) => {
   try {
-const now = new Date();
+    const now = new Date();
 
-// delete expired offers
-await Offer.deleteMany({
-  endDate: { $lt: now }
-});
+    await Offer.deleteMany({
+      endDate: { $lt: now }
+    });
 
-const offers = await Offer.find({
-  active: true,
+    const endOfToday = new Date();
+    endOfToday.setUTCHours(23, 59, 59, 999);
 
-  startDate: {
-    $lte: now
-  },
+    const offers = await Offer.find({
+      active: true,
 
-  endDate: {
-    $gte: now
-  },
+      startDate: {
+        $lte: endOfToday
+      },
 
-  $expr: {
-    $lt: [
-      "$soldCount",
-      "$totalLimit"
-    ]
-  }
-})
-.populate({
-  path: "products.product",
-  match: {
-    status: "active",
-    availableQuantity: { $gt: 0 }
-  }
-})
-.sort({ createdAt: -1 });
 
-const cleanedOffers = offers.map(offer => {
-  offer.products = offer.products.filter(p => p.product !== null);
-  return offer;
-});
-res.json({
-  count: cleanedOffers.length,
-  offers: cleanedOffers
-});
+      endDate: {
+        $gte: now
+      },
+
+      $expr: {
+        $lt: [
+          "$soldCount",
+          "$totalLimit"
+        ]
+      }
+    })
+    .populate({
+      path: "products.product",
+      match: {
+        status: "active",
+        availableQuantity: { $gt: 0 }
+      }
+    })
+    .sort({ createdAt: -1 });
+
+    const cleanedOffers = offers.map(offer => {
+      // تحويل الوثيقة إلى كائن عادي لتعديل المصفوفة بأمان
+      const offerObj = offer.toObject();
+      offerObj.products = offerObj.products.filter(p => p.product !== null && p.product !== undefined);
+      return offerObj;
+    }).filter(offer => offer.products.length > 0); // اختياري: حذف العرض كاملاً إذا كانت كل منتجاته غير متوفرة
+
+    res.json({
+      count: cleanedOffers.length,
+      offers: cleanedOffers
+    });
   } catch (err) {
     res.status(500).json({
       message: err.message,
