@@ -11,12 +11,18 @@ const {
   getWalletNumbers,
   addWalletNumber,
   deleteWalletNumber,
-  updateWalletNumber
+  updateWalletNumber,
+  getLink
 }  =require(`${__dirname}/../controllers/about/aboutController`)
 
 
 router.get("/", getAbout);
 router.get("/wallet", getWalletNumbers);
+
+
+router.get("/getLink", getLink);
+
+
 
 router.use(authMiddleware.protected);
 router.use(role("superadmin" ,"admin"));
