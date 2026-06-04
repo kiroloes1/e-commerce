@@ -92,62 +92,119 @@ exports.searchProducts = async (req, res) => {
 // Create Offer
 exports.createOffer = async (req, res) => {
   try {
-    const { title, products, startDate, endDate, totalLimit,imageUrl } = req.body;
+    const { title, startDate, endDate, totalLimit, imageUrl } = req.body;
+
+    const products =
+      typeof req.body.products === "string"
+        ? JSON.parse(req.body.products)
+        : req.body.products;
 
     if (!title || !products || products.length === 0) {
-      return res.status(400).json({ message: "بيانات المجلة غير مكتملة" });
+      return res.status(400).json({
+        message: "بيانات المجلة غير مكتملة"
+      });
     }
 
-    
+    // =========================
+    // 1. منع تكرار داخل نفس العرض
+    // =========================
+    const unique = new Set(products.map(p => p.product.toString()));
 
+    if (unique.size !== products.length) {
+      return res.status(400).json({
+        message: "لا يمكن تكرار نفس المنتج داخل العرض"
+      });
+    }
 
+    // =========================
+    // 2. البحث عن تعارضات
+    // =========================
+    const productIds = products.map(p => p.product);
 
+    const offers = await Offer.find({
+      "products.product": { $in: productIds }
+    }).populate("products.product");
+
+    const conflicts = [];
+
+    offers.forEach(offer => {
+      offer.products.forEach(p => {
+        const exists = productIds.some(
+          id => id.toString() === p.product._id.toString()
+        );
+
+        if (exists) {
+          conflicts.push({
+            productName: p.product.productName,
+            offerTitle: offer.title
+          });
+        }
+      });
+    });
+
+    // =========================
+    // 3. لو فيه تعارض → رجّع التفاصيل
+    // =========================
+    if (conflicts.length > 0) {
+      return res.status(400).json({
+        message: "بعض المنتجات موجودة بالفعل في عروض أخرى",
+        conflicts
+      });
+    }
+
+    // =========================
+    // 4. إنشاء العرض
+    // =========================
     const offer = await Offer.create({
       title,
-      products:
-        typeof products === "string"
-          ? JSON.parse(products)
-          : products,
+      products,
       startDate,
       endDate,
       totalLimit,
       image: {
-        url:imageUrl || "",
+        url: imageUrl || ""
       }
     });
 
-        await createNotification(
-          null,
-          `تم انشاء مجلة جديدة: ${offer.title}`,
-          `تم انشاء مجلة جديدة تحتوي على ${offer.products.length} منتجات. سارع بالاطلاع عليها!`,
-        );  
+    // =========================
+    // 5. Notification
+    // =========================
+    await createNotification(
+      null,
+      `تم انشاء مجلة جديدة: ${offer.title}`,
+      `تم انشاء مجلة جديدة تحتوي على ${offer.products.length} منتجات. سارع بالاطلاع عليها!`
+    );
 
-    res.status(201).json({
-      message: "تم انشاء المجلة",
-      offer,
+    return res.status(201).json({
+      message: "تم انشاء المجلة بنجاح",
+      offer
     });
+
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
+    return res.status(500).json({
+      message: err.message
     });
   }
 };
 
 // Get All Offers
+
 exports.getOffers = async (req, res) => {
   try {
     const now = new Date();
 
-    await Offer.deleteMany({
-      endDate: { $lt: now }
-    });
+await Offer.deleteMany({
+  $or: [
+    { endDate: { $lt: now } },
+    { $expr: { $gte: ["$soldCount", "$totalLimit"] } }
+  ]
+});
 
     const endOfToday = new Date();
     endOfToday.setUTCHours(23, 59, 59, 999);
 
     const offers = await Offer.find({
       active: true,
-
 
 
 
@@ -171,6 +228,7 @@ exports.getOffers = async (req, res) => {
     })
     .sort({ createdAt: -1 });
 
+    // تنظيف المخرجات من أي عروض تحتوي على منتجات فارغة أو غير متوفرة بعد الـ populate
     const cleanedOffers = offers.map(offer => {
       // تحويل الوثيقة إلى كائن عادي لتعديل المصفوفة بأمان
       const offerObj = offer.toObject();
