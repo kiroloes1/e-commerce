@@ -2,7 +2,7 @@ const Offer = require("../../models/offer");
 const uploadToCloud=require(`${__dirname}/../../services/cloudinary`)
 const cloudinary = require(`${__dirname}/../../config/cloudinaryConfig`);
 const productModel = require(`${__dirname}/../../models/product`);
-
+const UserModel = require(`${__dirname}/../../models/user`);
 const { getIO } = require(`${__dirname}/../../sockets/socket`);
 const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
 
@@ -191,6 +191,7 @@ exports.createOffer = async (req, res) => {
 
 exports.getOffers = async (req, res) => {
   try {
+    const userId=user.userId;
     const now = new Date();
 
 await Offer.deleteMany({
@@ -203,6 +204,24 @@ await Offer.deleteMany({
     const endOfToday = new Date();
     endOfToday.setUTCHours(23, 59, 59, 999);
 
+
+    const existUser=await UserModel.findById(userId);
+
+    if(existUser &&( existUser.role==="admin" || existUser.role==="superadmin")){
+    const offers = await Offer.find({
+   
+      endDate: {
+        $gte: now
+      },
+
+      $expr: {
+        $lt: [
+          "$soldCount",
+          "$totalLimit"
+        ]
+      }
+    })
+    }
     const offers = await Offer.find({
       active: true,
 
