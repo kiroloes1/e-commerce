@@ -9,6 +9,15 @@ const aboutSchema = new mongoose.Schema(
       trim: true,
     },
 
+    links:{
+      googleDrive:{
+        type:String
+      },
+      googlePlay:{
+          type:String
+      }
+    },
+
     logo: {
       url: String,
       public_id: String,
