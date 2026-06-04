@@ -190,7 +190,7 @@ exports.createOffer = async (req, res) => {
 // Get All Offers
 exports.getOffers = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req?.user?.userId;
     const now = new Date();
 
     // تنظيف العروض المنتهية أو اللي خلصت
