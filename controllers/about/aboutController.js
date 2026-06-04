@@ -65,7 +65,7 @@ exports.updateAbout = async (req, res) => {
     const about = await About.findOneAndUpdate(
       {},
       req.body,
-      { new: true, runValidators: true,upsert: true }
+      { new: true, runValidators: true  ,upsert: true,}
     );
 
     if (!about) {
@@ -205,3 +205,65 @@ exports.updateWalletNumber = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+// get Link
+exports.getLink = async (req, res) => {
+  try {
+    const about = await About.findOne().select("links");
+    
+    res.status(200).json({
+      links: about ? about.links : {}
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+// update Link
+exports.updateLink = async (req, res) => {
+  try {
+    const { googleDrive , googlePlay} = req.body; 
+
+    const about = await About.findOneAndUpdate(
+      {},
+      {
+        $set: {
+          "links.googleDrive": googleDrive,
+          "links.googlePlay": googlePlay
+        }
+      },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      message: "تم تحديث الروابط بنجاح",
+      links: about.links
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.deleteLink = async (req, res) => {
+  try {
+    const about = await About.findOneAndUpdate(
+      {},
+      {
+        $set: {
+          "links.googleDrive": "",
+          "links.googlePlay": ""
+        }
+
+      },
+      { new: true }
+    );
+    res.status(200).json({
+      message: "تم حذف الروابط بنجاح",
+      links: about.links
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+
+};
+
