@@ -188,80 +188,65 @@ exports.createOffer = async (req, res) => {
 };
 
 // Get All Offers
-
 exports.getOffers = async (req, res) => {
   try {
-    const userId=user.userId;
+    const userId = req.user.userId;
     const now = new Date();
 
-await Offer.deleteMany({
-  $or: [
-    { endDate: { $lt: now } },
-    { $expr: { $gte: ["$soldCount", "$totalLimit"] } }
-  ]
-});
+    // تنظيف العروض المنتهية أو اللي خلصت
+    await Offer.deleteMany({
+      $or: [
+        { endDate: { $lt: now } },
+        { $expr: { $gte: ["$soldCount", "$totalLimit"] } }
+      ]
+    });
 
-    const endOfToday = new Date();
-    endOfToday.setUTCHours(23, 59, 59, 999);
+    // هات المستخدم
+    const user = await UserModel.findById(userId);
 
+    const isAdmin =
+      user &&
+      (user.role === "admin" || user.role === "superadmin");
 
-    const existUser=await UserModel.findById(userId);
+    // بناء الفلتر الأساسي
+    const offerQuery = {
+      endDate: { $gte: now },
+      $expr: { $lt: ["$soldCount", "$totalLimit"] }
+    };
 
-    if(existUser &&( existUser.role==="admin" || existUser.role==="superadmin")){
-    const offers = await Offer.find({
-   
-      endDate: {
-        $gte: now
-      },
-
-      $expr: {
-        $lt: [
-          "$soldCount",
-          "$totalLimit"
-        ]
-      }
-    })
+    // لو مش admin → شوف active فقط
+    if (!isAdmin) {
+      offerQuery.active = true;
     }
-    const offers = await Offer.find({
-      active: true,
 
+    const offers = await Offer.find(offerQuery)
+      .populate({
+        path: "products.product",
+        match: {
+          status: "active",
+          availableQuantity: { $gt: 0 }
+        }
+      })
+      .sort({ createdAt: -1 });
 
+    const cleanedOffers = offers
+      .map(offer => {
+        const offerObj = offer.toObject();
+        offerObj.products = offerObj.products.filter(
+          p => p.product !== null && p.product !== undefined
+        );
+        return offerObj;
+      })
+      .filter(offer => offer.products.length > 0);
 
-      endDate: {
-        $gte: now
-      },
-
-      $expr: {
-        $lt: [
-          "$soldCount",
-          "$totalLimit"
-        ]
-      }
-    })
-    .populate({
-      path: "products.product",
-      match: {
-        status: "active",
-        availableQuantity: { $gt: 0 }
-      }
-    })
-    .sort({ createdAt: -1 });
-
-    // تنظيف المخرجات من أي عروض تحتوي على منتجات فارغة أو غير متوفرة بعد الـ populate
-    const cleanedOffers = offers.map(offer => {
-      // تحويل الوثيقة إلى كائن عادي لتعديل المصفوفة بأمان
-      const offerObj = offer.toObject();
-      offerObj.products = offerObj.products.filter(p => p.product !== null && p.product !== undefined);
-      return offerObj;
-    }).filter(offer => offer.products.length > 0); // اختياري: حذف العرض كاملاً إذا كانت كل منتجاته غير متوفرة
-
-    res.json({
+    return res.json({
       count: cleanedOffers.length,
       offers: cleanedOffers
     });
+
   } catch (err) {
-    res.status(500).json({
-      message: err.message,
+    return res.status(500).json({
+      message: err.message
     });
   }
 };
