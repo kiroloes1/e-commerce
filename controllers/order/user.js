@@ -771,15 +771,28 @@ exports.viewMyOrders = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
+    const search = req.query.search || "";
+
+    // Build filter
+    const filter = {
+      user: userId,
+      ...(search && {
+        $or: [
+          { orderNumber: { $regex: search, $options: "i" } },
+          { customerName: { $regex: search, $options: "i" } }
+        ]
+      })
+    };
+
     const orders = await Order.find(
-      { user: userId },
+      filter,
       { _id: 1, orderNumber: 1, finalPrice: 1, status: 1, createdAt: 1 }
     )
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await Order.countDocuments({ user: userId });
+    const total = await Order.countDocuments(filter);
 
     res.status(200).json({
       orders,
