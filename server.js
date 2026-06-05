@@ -62,32 +62,55 @@ app.use("/v1/compoOffer",compoOffer );
 
 app.use("/v1", backupRoute);
 
-// const Review = require("./models/review");
-// const mongoose=require('mongoose')
-// async function seedReviews() {
-//     try {
+const Order = require("./models/order");
 
-//         const reviews = [];
+const originalOrder = {
+  user: "69e43947c46dcc8052f0a969",
+  items: [
+    {
+      product: "6a07143fd08d76e1728c2c60",
+      comboId: null,
+      productName: "كاتشب 400 جرام حار جود فرانس",
+      unit_type: "كرتونة",
+      quantity: 1,
+      price: 365,
+      subtotal: 365,
+      isOfferItem: true,
+      offerTitle: "مجله 2",
+      isComboItem: false,
+      comboTitle: ""
+    }
+  ],
+  totalPrice: 365,
+  shippingPrice: 74,
+  finalPrice: 439,
+  discount: 0,
+  customerName: "kiroloes reda wassef",
+  phone: "01270857659",
+  address: {
+    city: "القليوبية",
+    region: "العبور",
+    street: "شارع ماري منيب",
+    building: ""
+  },
+  status: "pending",
+  payment: {
+    method: "cash",
+    walletPhone: "",
+    proofImage: null,
+    status: "unpaid"
+  }
+};
 
-//         for (let i = 0; i < 100; i++) {
-//             reviews.push({
-//                 userId: new mongoose.Types.ObjectId(), // أو User ID حقيقي
-//                 productId: new mongoose.Types.ObjectId("6a04a8f5d08d76e1728c1be5"),
-//                 rating: Math.floor(Math.random() * 5) + 1,
-//                 comment: `Review Number ${i + 1}`
-//             });
-//         }
+const orders = Array.from({ length: 800 }, (_, i) => ({
+  ...originalOrder,
+  orderNumber: `ORD-${Date.now()}-${i}`,
+}));
 
-//         await Review.insertMany(reviews);
+await Order.insertMany(orders);
 
-//         console.log("500 Reviews Inserted Successfully");
-//         process.exit();
-//     } catch (err) {
-//         console.error(err);
-//     }
-// }
+console.log("800 orders inserted successfully");
 
-// seedReviews();
 
 
 
