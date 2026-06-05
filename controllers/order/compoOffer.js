@@ -1,5 +1,5 @@
 const ComboOffer = require(`${__dirname}/../../models/compoOffer`);
-const productModel = require(`${__dirname}/../../models/product`);
+const Product = require(`${__dirname}/../../models/product`);
 
 
 const { getIO } = require(`${__dirname}/../../sockets/socket`);
