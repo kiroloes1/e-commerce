@@ -147,14 +147,12 @@ exports.getComboOffers = async (req, res) => {
     const isAdmin =
       user && (user.role === "admin" || user.role === "superadmin");
 
-    await ComboOffer.updateMany(
-{
-        $or: [
+    await ComboOffer.deleteMany({
+      $or: [
         { endDate: { $lt: now } },
         { $expr: { $gte: ["$soldCount", "$totalLimit"] } }
       ]
-}
-    );
+    });
 
     // 2. Base query
     const query = {
