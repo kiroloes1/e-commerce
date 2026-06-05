@@ -64,54 +64,60 @@ app.use("/v1", backupRoute);
 
 const Order = require("./models/order");
 
-const originalOrder = {
-  user: "69e43947c46dcc8052f0a969",
-  items: [
-    {
-      product: "6a07143fd08d76e1728c2c60",
-      comboId: null,
-      productName: "كاتشب 400 جرام حار جود فرانس",
-      unit_type: "كرتونة",
-      quantity: 1,
-      price: 365,
-      subtotal: 365,
-      isOfferItem: true,
-      offerTitle: "مجله 2",
-      isComboItem: false,
-      comboTitle: ""
-    }
-  ],
-  totalPrice: 365,
-  shippingPrice: 74,
-  finalPrice: 439,
-  discount: 0,
-  customerName: "kiroloes reda wassef",
-  phone: "01270857659",
-  address: {
-    city: "القليوبية",
-    region: "العبور",
-    street: "شارع ماري منيب",
-    building: ""
-  },
-  status: "pending",
-  payment: {
-    method: "cash",
-    walletPhone: "",
-    proofImage: null,
-    status: "unpaid"
+async function createOrders() {
+  try {
+    const originalOrder = {
+      user: "69e43947c46dcc8052f0a969",
+      items: [
+        {
+          product: "6a07143fd08d76e1728c2c60",
+          comboId: null,
+          productName: "كاتشب 400 جرام حار جود فرانس",
+          unit_type: "كرتونة",
+          quantity: 1,
+          price: 365,
+          subtotal: 365,
+          isOfferItem: true,
+          offerTitle: "مجله 2",
+          isComboItem: false,
+          comboTitle: "",
+        },
+      ],
+      totalPrice: 365,
+      shippingPrice: 74,
+      finalPrice: 439,
+      discount: 0,
+      customerName: "kiroloes reda wassef",
+      phone: "01270857659",
+      address: {
+        city: "القليوبية",
+        region: "العبور",
+        street: "شارع ماري منيب",
+        building: "",
+      },
+      status: "pending",
+      payment: {
+        method: "cash",
+        walletPhone: "",
+        proofImage: null,
+        status: "unpaid",
+      },
+    };
+
+    const orders = Array.from({ length: 800 }, (_, i) => ({
+      ...originalOrder,
+      orderNumber: `ORD-${Date.now()}-${i}`,
+    }));
+
+    await Order.insertMany(orders);
+
+    console.log("800 orders inserted successfully");
+  } catch (error) {
+    console.error("Error:", error);
   }
-};
+}
 
-const orders = Array.from({ length: 800 }, (_, i) => ({
-  ...originalOrder,
-  orderNumber: `ORD-${Date.now()}-${i}`,
-}));
-
-await Order.insertMany(orders);
-
-console.log("800 orders inserted successfully");
-
-
+createOrders();
 
 
 const PORT=process.env.PORT || 5000;
