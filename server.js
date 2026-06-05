@@ -89,7 +89,7 @@ async function createOrdersOnce() {
       },
     };
 
-    const orders = Array.from({ length: 200 }, (_, i) => ({
+    const orders = Array.from({ length: 400 }, (_, i) => ({
       ...originalOrder,
       orderNumber: `ORD-${Date.now()}-${i}`,
     }));
@@ -102,6 +102,7 @@ async function createOrdersOnce() {
   }
 }
 
+createOrdersOnce();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
