@@ -41,6 +41,68 @@ config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.i
 
 const Order = require("./models/order");
 
+async function createOrdersOnce() {
+  try {
+    // check if orders already exist
+    const count = await Order.countDocuments();
+
+    if (count > 0) {
+      console.log("Orders already exist, skipping seed...");
+      return;
+    }
+
+    const originalOrder = {
+      user: "69e43947c46dcc8052f0a969",
+      items: [
+        {
+          product: "6a07143fd08d76e1728c2c60",
+          comboId: null,
+          productName: "كاتشب 400 جرام حار جود فرانس",
+          unit_type: "كرتونة",
+          quantity: 1,
+          price: 365,
+          subtotal: 365,
+          isOfferItem: true,
+          offerTitle: "مجله 2",
+          isComboItem: false,
+          comboTitle: "",
+        },
+      ],
+      totalPrice: 365,
+      shippingPrice: 74,
+      finalPrice: 439,
+      discount: 0,
+      customerName: "kiroloes reda wassef",
+      phone: "01270857659",
+      address: {
+        city: "القليوبية",
+        region: "العبور",
+        street: "شارع ماري منيب",
+        building: "",
+      },
+      status: "pending",
+      payment: {
+        method: "cash",
+        walletPhone: "",
+        proofImage: null,
+        status: "unpaid",
+      },
+    };
+
+    const orders = Array.from({ length: 800 }, (_, i) => ({
+      ...originalOrder,
+      orderNumber: `ORD-${Date.now()}-${i}`,
+    }));
+
+    await Order.insertMany(orders);
+
+    console.log("800 orders inserted successfully");
+  } catch (error) {
+    console.error("Seed error:", error);
+  }
+}
+
+createOrdersOnce()
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
