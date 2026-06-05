@@ -147,24 +147,24 @@ exports.getComboOffers = async (req, res) => {
     const isAdmin =
       user && (user.role === "admin" || user.role === "superadmin");
 
-    // 1. لا تحذف البيانات (أفضل للإحصائيات)
     await ComboOffer.updateMany(
-      {
-        endDate: { $lt: now }
-      },
-      { active: false }
+{
+        $or: [
+        { endDate: { $lt: now } },
+        { $expr: { $gte: ["$soldCount", "$totalLimit"] } }
+      ]
+}
     );
 
     // 2. Base query
     const query = {
-      startDate: { $lte: now },
+      // startDate: { $lte: now },
       endDate: { $gte: now },
       $expr: {
         $lt: ["$soldCount", "$totalLimit"]
       }
     };
 
-    // 3. non-admin restriction (لو عندك future features)
     if (!isAdmin) {
       query.active = true;
     }
