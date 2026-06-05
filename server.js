@@ -46,7 +46,7 @@ async function createOrdersOnce() {
     // check if orders already exist
     const count = await Order.countDocuments();
 
-    if (count > 100) {
+    if (count > 1000) {
       console.log("Orders already exist, skipping seed...");
       return;
     }
@@ -89,7 +89,7 @@ async function createOrdersOnce() {
       },
     };
 
-    const orders = Array.from({ length: 400 }, (_, i) => ({
+    const orders = Array.from({ length: 50 }, (_, i) => ({
       ...originalOrder,
       orderNumber: `ORD-${Date.now()}-${i}`,
     }));
