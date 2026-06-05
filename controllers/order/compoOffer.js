@@ -4,7 +4,7 @@ const Product = require(`${__dirname}/../../models/product`);
 
 const { getIO } = require(`${__dirname}/../../sockets/socket`);
 const { createNotification } = require(`${__dirname}/../../controllers/notification/notification`);
-
+const UserModel = require(`${__dirname}/../../models/user`);
 
 exports.createComboOffer = async (req, res) => {
 
@@ -137,41 +137,54 @@ exports.createComboOffer = async (req, res) => {
 };
 
 
-
 exports.getComboOffers = async (req, res) => {
   try {
+    const userId = req?.user?.userId;
     const now = new Date();
 
-    // delete expired combos
-    await ComboOffer.deleteMany({
-      endDate: { $lt: now }
-    });
+    const user = await UserModel.findById(userId);
 
-    // get active combos
-    let combos = await ComboOffer.find({
-      active: true,
+    const isAdmin =
+      user && (user.role === "admin" || user.role === "superadmin");
+
+    // 1. لا تحذف البيانات (أفضل للإحصائيات)
+    await ComboOffer.updateMany(
+      {
+        endDate: { $lt: now }
+      },
+      { active: false }
+    );
+
+    // 2. Base query
+    const query = {
       startDate: { $lte: now },
       endDate: { $gte: now },
       $expr: {
         $lt: ["$soldCount", "$totalLimit"]
       }
-    })
+    };
+
+    // 3. non-admin restriction (لو عندك future features)
+    if (!isAdmin) {
+      query.active = true;
+    }
+
+    let combos = await ComboOffer.find(query)
       .populate("items.product")
       .sort({ createdAt: -1 });
 
-    // filter invalid combos
+    // 4. filter invalid stock combos
     combos = combos
       .map(combo => {
-        // remove null products first
         combo.items = combo.items.filter(item => item.product);
 
         const isValid = combo.items.every(item => {
           const product = item.product;
 
           const stock =
-            item.unit_type === "قطعة"
-              ? product.totalUnits
-              : product.availableQuantity;
+            item.unit_type === "كرتونة"
+              ? product.availableQuantity
+              : product.totalUnits;
 
           return stock >= item.quantity;
         });
