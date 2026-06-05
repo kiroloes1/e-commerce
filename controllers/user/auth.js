@@ -266,11 +266,75 @@ exports.forgetPassword = async (req, res) => {
     await user.save();
 
     // هنا الإرسال
-    await SendEmail({
-        to: user.email,
-        subject: "رمز إعادة تعيين كلمة المرور",
-        html: `<p>رمز إعادة التعيين الخاص بك هو: <strong>${resetCode}</strong></p>`
-    });
+await SendEmail({
+    to: user.email,
+    subject: "🔐 رمز إعادة تعيين كلمة المرور - أبو الدهب للمجمدات",
+    html: `
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>إعادة تعيين كلمة المرور</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+            body {
+                font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f8fafc;
+                direction: rtl;
+                text-align: right;
+            }
+        </style>
+    </head>
+    <body>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; padding: 20px 0;">
+            <tr>
+                <td align="center">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 500px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid #e2e8f0;">
+                        
+                        <tr>
+                            <td align="center" style="background-color: #0f172a; padding: 30px 20px;">
+                                <img src="https://aboeldahabfood-1.web.app/assets/logo.jpeg" alt="أبو الدهب للمجمدات" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #ffffff; margin-bottom: 12px;">
+                                <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 700;">أبو الدهب للمجمدات</h1>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td style="padding: 40px 30px; text-align: center;">
+                                <h2 style="color: #1e293b; margin-top: 0; margin-bottom: 16px; font-size: 22px; font-weight: 700;">طلب إعادة تعيين كلمة المرور</h2>
+                                <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
+                                    مرحباً، لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك. يرجى استخدام الرمز الرقمي التالي لإتمام العملية. الرمز صالح لفترة محدودة.
+                                </p>
+
+                                <div style="background-color: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 30px; display: inline-block; min-width: 180px;">
+                                    <span style="font-size: 28px; font-weight: 900; color: #0f172a; letter-spacing: 4px; font-family: monospace, sans-serif;">${resetCode}</span>
+                                </div>
+
+                                <p style="color: #94a3b8; font-size: 13px; line-height: 1.5; margin: 0;">
+                                    إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا الإيميل بأمان وسيظل حسابك محمياً.
+                                </p>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+                                <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px 0;">© 2026 أبو الدهب للمجمدات. جميع الحقوق محفوظة.</p>
+                                <div style="margin-top: 10px;">
+                                    <a href="https://aboeldahabfood-1.web.app/" style="color: #3b82f6; text-decoration: none; font-size: 13px; font-weight: 600;">زيارة المتجر</a>
+                                </div>
+                            </td>
+                        </tr>
+
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    `
+});
 
     res.status(200).json({ message: "تم إرسال الكود بنجاح" });
 
