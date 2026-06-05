@@ -763,6 +763,7 @@ exports.createOrderV2 = async (req, res) => {
 
 
 // View my orders
+// View my orders
 exports.viewMyOrders = async (req, res) => {
   try {
     const { userId } = req.user;
@@ -771,28 +772,34 @@ exports.viewMyOrders = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    const search = req.query.search || "";
+    const { search = "", status } = req.query;
 
-    // Build filter
-    const filter = {
-      user: userId,
-      ...(search && {
-        $or: [
-          { orderNumber: { $regex: search, $options: "i" } },
-          { customerName: { $regex: search, $options: "i" } }
-        ]
-      })
-    };
+    // build query dynamically
+    const query = { user: userId };
+
+    // status filter
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
+    // search filter (orderNumber OR phone OR customerName)
+    if (search) {
+      query.$or = [
+        { orderNumber: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { customerName: { $regex: search, $options: "i" } },
+      ];
+    }
 
     const orders = await Order.find(
-      filter,
+      query,
       { _id: 1, orderNumber: 1, finalPrice: 1, status: 1, createdAt: 1 }
     )
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await Order.countDocuments(filter);
+    const total = await Order.countDocuments(query);
 
     res.status(200).json({
       orders,
