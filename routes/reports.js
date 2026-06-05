@@ -14,6 +14,9 @@ router.use(role("superadmin" ,"admin"));
 
 router.get('/', reports.getSalesReport);
 router.get('/getUserName', reports.getUserName);
+router.get('/getOffersReport', reports.getOffersReport);
+router.get('/getCombosReport', reports.getCombosReport);
+
 
 
 
