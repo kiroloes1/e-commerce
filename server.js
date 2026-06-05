@@ -46,7 +46,7 @@ async function createOrdersOnce() {
     // check if orders already exist
     const count = await Order.countDocuments();
 
-    if (count > 6000) {
+    if (count > 10000) {
       console.log("Orders already exist, skipping seed...");
       return;
     }
