@@ -764,22 +764,35 @@ exports.createOrderV2 = async (req, res) => {
 
 // View my orders
 exports.viewMyOrders = async (req, res) => {
-    try {
-        const { userId } = req.user;
+  try {
+    const { userId } = req.user;
 
-        const orders = await Order.find({ user: userId },{_id:1,orderNumber:1,finalPrice:1 ,status:1 , createdAt:1})
-            .sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
 
-        res.status(200).json({
-            results: orders.length,
-            orders
-        });
+    const orders = await Order.find(
+      { user: userId },
+      { _id: 1, orderNumber: 1, finalPrice: 1, status: 1, createdAt: 1 }
+    )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
-    }
+    const total = await Order.countDocuments({ user: userId });
+
+    res.status(200).json({
+      orders,
+      total,
+      hasMore: skip + orders.length < total,
+      page,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };
 
 
