@@ -301,3 +301,113 @@ exports.getUserName = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+// offers and combos API (new)
+exports.getOffersReport = async (req, res) => {
+  try {
+    const offers = await Order.aggregate([
+      {
+        $match: {
+          status: { $nin: ["cancelled"] }
+        }
+      },
+
+      { $unwind: "$items" },
+
+      {
+        $match: {
+          "items.isOfferItem": true
+        }
+      },
+
+      {
+        $group: {
+          _id: "$items.offerTitle",
+
+          totalSold: {
+            $sum: "$items.quantity"
+          },
+
+          totalRevenue: {
+            $sum: "$items.subtotal"
+          },
+
+          ordersCount: {
+            $sum: 1
+          }
+        }
+      },
+
+      {
+        $sort: {
+          totalRevenue: -1
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      offers
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+};
+
+exports.getCombosReport = async (req, res) => {
+  try {
+    const combos = await Order.aggregate([
+      {
+        $match: {
+          status: { $nin: ["cancelled"] }
+        }
+      },
+
+      { $unwind: "$items" },
+
+      {
+        $match: {
+          "items.isComboItem": true
+        }
+      },
+
+      {
+        $group: {
+          _id: "$items.comboTitle",
+
+          totalSold: {
+            $sum: "$items.quantity"
+          },
+
+          totalRevenue: {
+            $sum: "$items.subtotal"
+          },
+
+          ordersCount: {
+            $sum: 1
+          }
+        }
+      },
+
+      {
+        $sort: {
+          totalRevenue: -1
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      combos
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+};
