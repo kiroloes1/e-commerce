@@ -89,7 +89,7 @@ async function createOrdersOnce() {
       },
     };
 
-    const orders = Array.from({ length: 250 }, (_, i) => ({
+    const orders = Array.from({ length: 400 }, (_, i) => ({
       ...originalOrder,
       orderNumber: `ORD-${Date.now()}-${i}`,
     }));
