@@ -516,24 +516,61 @@ exports.getAllProductsClientsLimit = async (req, res) => {
 
 exports.getAllProductsClients2 = async (req, res) => {
   try {
-  
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-   
+    const limit = parseInt(req.query.limit) || 16; // افتراضي 16 بناءً على الفرونت
     const skip = (page - 1) * limit;
 
-  
-    const products = await productModel.aggregate([
-      ...basePipeline,
-      { $skip: skip },
-      { $limit: limit }
+    const { search, category, unit_type } = req.query;
+
+    // 1. بناء مرحلة الفلترة الديناميكية
+    let matchStage = { status: "active" }; // جلب المنتجات النشطة فقط للعملاء
+
+    // فلترة حسب الصنف
+    if (category && category !== "الكل") {
+      matchStage.category = category;
+    }
+
+    // فلترة حسب نوع الوحدة (قطعة / كرتونة)
+    if (unit_type && unit_type !== "الكل") {
+      matchStage.unit_type = unit_type;
+    }
+
+    // فلترة حسب نص البحث (باستخدام النص أو الـ Regex المرن)
+    if (search && search.trim() !== "") {
+      matchStage.$or = [
+        { productName: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // 2. تنفيذ الـ Aggregation Pipeline
+    const result = await productModel.aggregate([
+      { $match: matchStage },
+      // ...basePipeline, // إذا كان لديك مراحل ثابتة مثل ترتيب أو جلب حقول معينة فك التعليق عنها هنا
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $sort: { createdAt: -1 } }, // ترتيب الأحدث أولاً
+            { $skip: skip },
+            { $limit: limit }
+          ]
+        }
+      }
     ]);
+
+    const totalProducts = result[0].metadata[0]?.total || 0;
+    const products = result[0].data;
+    const totalPages = Math.ceil(totalProducts / limit);
 
     return res.status(200).json({
       message: "تم جلب المنتجات بنجاح",
-      currentPage: page,
-      limit: limit,
-      length: products.length,
+      pagination: {
+        totalProducts,
+        totalPages,
+        currentPage: page,
+        limit
+      },
       data: products
     });
 
