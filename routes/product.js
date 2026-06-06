@@ -15,6 +15,9 @@ router.get('/allClients', productController.getAllProductsClients);
 
 router.get('/allClientsLimit', productController.getAllProductsClientsLimit);
 
+router.get('/getAllProductsClients2', productController.getAllProductsClients2);
+
+
 // get all products  based on category
 router.get('/getProductsByCategory', productController.getProductsByCategory);
 
