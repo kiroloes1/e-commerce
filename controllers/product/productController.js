@@ -514,6 +514,37 @@ exports.getAllProductsClientsLimit = async (req, res) => {
   }
 };
 
+exports.getAllProductsClients2 = async (req, res) => {
+  try {
+  
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+   
+    const skip = (page - 1) * limit;
+
+  
+    const products = await productModel.aggregate([
+      ...basePipeline,
+      { $skip: skip },
+      { $limit: limit }
+    ]);
+
+    return res.status(200).json({
+      message: "تم جلب المنتجات بنجاح",
+      currentPage: page,
+      limit: limit,
+      length: products.length,
+      data: products
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      message: err.message
+    });
+  }
+};
+
+
 // filter to  product based on category
 exports.filterProductBasedOnCategory=async(req,res)=>{
     try{
