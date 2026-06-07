@@ -69,10 +69,13 @@ exports.updateAbout = async (req, res) => {
     );
 
     if (!about) {
-      return res.status(404).json({
-        message: "لا توجد معلومات ",
+      await About.create(req.body);
+       return res.status(201).json({
+        message: "تم اضافه المعلومات بنجاح  ",
+        data: about,
       });
     }
+
 
     res.status(200).json({
       message: "تم التحديث بنجاح",
