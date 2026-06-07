@@ -18,6 +18,10 @@ const aboutSchema = new mongoose.Schema(
       }
     },
 
+    allowedDistance:{
+      type:Number,
+      default:70
+    },
 
     logo: {
       url: String,
@@ -53,11 +57,10 @@ const aboutSchema = new mongoose.Schema(
         type: String,
       },
     ],
-    shippingAddress:[
-      {
-        type: String,
-      }
-    ],
+shippingAddress: {
+  type: [String],
+  default: ["القاهرة", "الجيزة", "القليوبية", "السادس من اكتوبر"]
+},
 
 
     address: {
