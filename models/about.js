@@ -61,6 +61,10 @@ shippingAddress: {
   type: [String],
   default: ["القاهرة", "الجيزة", "القليوبية", "السادس من اكتوبر"]
 },
+pricePerKm:{
+  type:Number,
+  default:4
+},
 
 
     address: {
