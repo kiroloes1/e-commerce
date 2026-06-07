@@ -18,6 +18,7 @@ const aboutSchema = new mongoose.Schema(
       }
     },
 
+
     logo: {
       url: String,
       public_id: String,
@@ -51,6 +52,11 @@ const aboutSchema = new mongoose.Schema(
       {
         type: String,
       },
+    ],
+    shippingAddress:[
+      {
+        type: String,
+      }
     ],
 
 
