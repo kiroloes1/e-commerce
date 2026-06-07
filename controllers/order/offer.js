@@ -207,7 +207,7 @@ exports.getOffers = async (req, res) => {
     
     const isAdmin =
       user &&
-      (user.role === "admin" || user.role === "superadmin");
+      (user.role == "admin" || user.role == "superadmin");
 
     // بناء الفلتر الأساسي
     const offerQuery = {
