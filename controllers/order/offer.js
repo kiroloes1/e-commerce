@@ -204,6 +204,7 @@ exports.getOffers = async (req, res) => {
     // هات المستخدم
     const user = await UserModel.findById(userId);
 
+    
     const isAdmin =
       user &&
       (user.role === "admin" || user.role === "superadmin");
