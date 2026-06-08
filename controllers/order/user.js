@@ -999,7 +999,7 @@ exports.bestSeller = async (req, res) => {
       // 3. ترتيب حسب الأكثر مبيعًا
       { $sort: { totalSold: -1 } },
 
-        { $limit: 5 },
+        { $limit: 4 },
       // 4. جلب بيانات المنتج من Product collection
       {
         $lookup: {
