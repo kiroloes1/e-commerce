@@ -36,7 +36,7 @@ const compoOffer = require("./routes/compoOffer");
 
 require(`${__dirname}/jobs/cleanNotifications`);
 
-config.connectDB("mongodb+srv://kiroloesreda_db_user:MKwmoPdDgpNP14cs@cluster0.ie9ekij.mongodb.net/plastic?retryWrites=true&w=majority");
+config.connectDB("mongodb+srv://aboldahabfood_db_user:hUEkO0aOJLkkoziy@aboldahabfood.6gyyyab.mongodb.net/plastic?retryWrites=true&w=majority");
 
 
 
