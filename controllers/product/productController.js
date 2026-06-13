@@ -1118,24 +1118,24 @@ exports.deleteImageToProduct = async (req, res) => {
 
 exports.sitemap = async (req, res) => {
   try {
-    const products = await productModel.find({}, {
-      _id: 1,
-      updatedAt: 1
-    });
+    const products = await productModel.find(
+      { status: "active" },
+      {
+        _id: 1,
+        productName: 1,
+        updatedAt: 1
+      }
+    );
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
 
-<url>
-  <loc>https://www.aboeldahabfoods.com/</loc>
-  <priority>1.0</priority>
-</url>
-`;
+    products.forEach((product) => {
+      const name = encodeURIComponent(product.productName);
 
-    products.forEach(product => {
       xml += `
 <url>
-  <loc>https://www.aboeldahabfoods.com/product/${product._id}</loc>
+  <loc>https://www.aboeldahabfoods.com/تفاصيل المنتج/${product._id}?الاسم=${name}</loc>
   <lastmod>${product.updatedAt.toISOString().split("T")[0]}</lastmod>
   <changefreq>weekly</changefreq>
   <priority>0.8</priority>
