@@ -12,6 +12,7 @@ const uploads=multer({storage:storage})
 
 //  Get all products clients
 router.get('/allClients', productController.getAllProductsClients);
+router.get("/sitemap.xml", productController.sitemap);
 
 router.get('/allClientsLimit', productController.getAllProductsClientsLimit);
 
